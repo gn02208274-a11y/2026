@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 山梨甲斐旅 (共用網頁版)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;800&display=swap" rel="stylesheet">
+    
+    <!-- 網站圖示 (Favicon) -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🍃%3C/text%3E%3C/svg%3E">
+
+    <!-- Firebase Libraries -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root { --ac-green: #78B159; --ac-cream: #FDFBF0; --ac-brown: #7C5E45; --ac-text: #594A3D; }
+        body { font-family: 'M PLUS Rounded 1c', sans-serif; background-color: var(--ac-cream); color: var(--ac-text); background-image: radial-gradient(#E6F2D6 15%, transparent 16%), radial-gradient(#E6F2D6 15%, transparent 16%); background-size: 30px 30px; background-position: 0 0, 15px 15px; }
+        
+        /* 通用卡片樣式 */
+        .nook-card { background-color: white; border-radius: 1rem; box-shadow: 4px 4px 0 rgba(124, 94, 69, 0.1); border: 2px solid #E0E0E0; transition: transform 0.2s; }
+        .nook-card:hover { transform: translateY(-2px); box-shadow: 6px 6px 0 rgba(124, 94, 69, 0.15); }
+        
+        /* 按鈕與標籤 */
+        .nook-btn { border-radius: 9999px; font-weight: 800; transition: all 0.2s; cursor: pointer; }
+        .nook-btn:active { transform: scale(0.95); }
+        .leaf-icon { display: inline-block; width: 1.2em; height: 1.2em; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2378B159'%3E%3Cpath d='M12 2C9 2 4 5 4 10C4 13 6 15 8 16L9 22H11L10 16.5C10 16.5 13 17 15 15C18 12 20 8 20 5C20 3 18 2 12 2ZM12 4C16 4 17 7 15 10C13 13 10 14 10 14C10 14 11.5 10 9 7C7 5 5 6 5 6C5 6 7 4 12 4Z'/%3E%3C/svg%3E"); background-size: contain; background-repeat: no-repeat; vertical-align: middle; }
+
+        /* 導覽列 */
+        .nav-link { cursor: pointer; padding: 0.5rem 1rem; border-radius: 9999px; font-weight: bold; color: white; opacity: 0.8; transition: all 0.2s; }
+        .nav-link:hover, .nav-link.active { background-color: rgba(255,255,255,0.2); opacity: 1; }
+        
+        /* Modal */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; display: flex; justify-content: center; align-items: center; padding: 1rem; backdrop-filter: blur(4px); }
+        .modal-content { background: #FDFBF0; border-radius: 1.5rem; padding: 2rem; width: 100%; max-width: 400px; border: 4px solid #F7E464; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        
+        /* Toast Notification */
+        #toast { visibility: hidden; min-width: 250px; margin-left: -125px; background-color: #333; color: #fff; text-align: center; border-radius: 50px; padding: 16px; position: fixed; z-index: 1000; left: 50%; bottom: 30px; font-size: 14px; opacity: 0; transition: opacity 0.5s, bottom 0.5s; }
+        #toast.show { visibility: visible; opacity: 1; bottom: 50px; }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <!-- Toast Notification -->
+    <div id="toast">已複製連結！</div>
+
+    <!-- 登入與設定遮罩 -->
+    <div id="login-modal" class="modal">
+        <div class="modal-content text-center">
+            <div class="w-20 h-20 bg-white rounded-full mx-auto mb-4 flex items-center justify-center border-4 border-[#78B159] shadow-sm">
+                <span class="leaf-icon w-12 h-12"></span>
+            </div>
+            <h2 class="text-2xl font-black text-[#7C5E45] mb-2">開始旅程</h2>
+            <p class="text-sm text-gray-500 mb-6 font-bold">請輸入「旅費代碼」與旅伴同步資料</p>
+            
+            <div class="space-y-4">
+                <input type="text" id="travel-id-input" placeholder="設定一個代碼 (例: Trip2026)" class="w-full bg-white border-2 border-gray-300 rounded-xl p-3 text-center font-bold text-lg text-[#7C5E45] outline-none focus:border-[#78B159]">
+                <button onclick="saveTravelId()" class="w-full bg-[#78B159] text-white font-black py-3 rounded-xl shadow-md nook-btn text-lg hover:bg-[#689F4D]">🚀 進入網站</button>
+            </div>
+
+            <div class="mt-8 pt-4 border-t border-gray-200">
+                <button onclick="toggleConfigPanel()" class="text-xs text-gray-400 font-bold underline hover:text-gray-600">第一次使用？請先點此設定雲端資料庫</button>
+            </div>
+            
+            <!-- Config 設定區 (預設隱藏) -->
+            <div id="config-panel" class="hidden mt-4 text-left bg-gray-50 p-3 rounded-lg border border-gray-200">
+                <p class="text-xs text-gray-500 mb-2 font-bold">請貼上 Firebase Config (JSON格式):</p>
+                <textarea id="config-input" class="w-full h-24 text-[10px] bg-white p-2 rounded border border-gray-300 font-mono mb-2" placeholder='const firebaseConfig = { ... }'></textarea>
+                <button onclick="saveConfig()" class="w-full bg-[#F7E464] text-[#7C5E45] font-bold py-2 rounded-lg text-sm hover:bg-[#FFD54F]">儲存設定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 頂部導覽列 -->
+    <nav class="bg-[#78B159] shadow-md sticky top-0 z-50 hidden" id="main-nav">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-2 cursor-pointer" onclick="switchView('dashboard')">
+                    <div class="w-10 h-10 bg-[#FDFBF0] rounded-full flex items-center justify-center border-2 border-[#F7E464] transform -rotate-12">
+                        <span class="leaf-icon"></span>
+                    </div>
+                    <span class="font-extrabold text-xl text-[#FDFBF0] tracking-wider hidden sm:block">Nook Travel</span>
+                </div>
+                
+                <!-- 電腦版選單 -->
+                <div class="hidden md:flex space-x-1">
+                    <a onclick="switchView('dashboard')" class="nav-link active" id="nav-dashboard">總覽</a>
+                    <a onclick="switchView('accounting')" class="nav-link" id="nav-accounting">記帳</a>
+                    <a onclick="switchView('lists')" class="nav-link" id="nav-lists">清單</a>
+                    <a onclick="switchView('itinerary')" class="nav-link" id="nav-itinerary">行程</a>
+                    <a onclick="switchView('transport')" class="nav-link" id="nav-transport">交通</a>
+                </div>
+
+                <!-- 手機版漢堡選單按鈕 -->
+                <div class="md:hidden">
+                    <button onclick="document.getElementById('mobile-menu').classList.toggle('hidden')" class="text-white font-bold p-2">
+                        <span class="text-2xl">☰</span>
+                    </button>
+                </div>
+
+                <div class="flex items-center ml-4">
+                     <span class="text-xs bg-black/20 text-white px-3 py-1 rounded-full font-bold cursor-pointer hover:bg-black/30 transition" onclick="logout()" id="id-badge">ID: --</span>
+                </div>
+            </div>
+        </div>
+        <!-- 手機版下拉選單 -->
+        <div id="mobile-menu" class="hidden md:hidden bg-[#689F4D] p-2">
+            <a onclick="switchView('dashboard'); closeMenu()" class="block px-4 py-2 text-white font-bold hover:bg-black/10 rounded">📊 總覽</a>
+            <a onclick="switchView('accounting'); closeMenu()" class="block px-4 py-2 text-white font-bold hover:bg-black/10 rounded">💰 記帳</a>
+            <a onclick="switchView('lists'); closeMenu()" class="block px-4 py-2 text-white font-bold hover:bg-black/10 rounded">📝 清單</a>
+            <a onclick="switchView('itinerary'); closeMenu()" class="block px-4 py-2 text-white font-bold hover:bg-black/10 rounded">📅 行程</a>
+            <a onclick="switchView('transport'); closeMenu()" class="block px-4 py-2 text-white font-bold hover:bg-black/10 rounded">🚌 交通</a>
+        </div>
+    </nav>
+
+    <!-- 主要內容區 -->
+    <main id="main-content" class="container mx-auto px-4 py-6 max-w-4xl flex-grow hidden">
+        
+        <!-- 總覽頁面 -->
+        <section id="view-dashboard" class="space-y-6 fade-in">
+            <div class="text-center mb-6">
+                <h1 class="text-2xl md:text-3xl font-black text-[#7C5E45] mb-2">2026 山梨甲斐・靜謐之旅</h1>
+                <div class="flex justify-center gap-2 mb-2">
+                    <p class="text-sm text-gray-500 font-bold bg-white inline-block px-3 py-1 rounded-full border border-gray-200">兩人同行 • No Beef • 雲端同步</p>
+                </div>
+                <!-- 分享按鈕 -->
+                <button onclick="copyShareLink()" class="text-xs bg-[#78B159] text-white px-3 py-1.5 rounded-full font-bold shadow-sm hover:bg-[#689F4D] transition flex items-center justify-center mx-auto">
+                    🔗 複製邀請連結
+                </button>
+            </div>
+
+            <div class="nook-card p-6 border-t-8 border-[#F7E464]">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-4">
+                    <h2 class="text-xl font-black text-[#7C5E45] flex items-center mb-2 md:mb-0"><span class="text-2xl mr-2">💰</span> 預算監控</h2>
+                    <div class="text-right">
+                        <span class="text-sm text-gray-500 font-bold">總花費 (TWD)</span>
+                        <div class="text-3xl font-black text-[#E65100]" id="total-spent">--</div>
+                    </div>
+                </div>
+                <!-- 進度條 -->
+                <div class="w-full bg-gray-100 rounded-full h-4 mb-4 overflow-hidden shadow-inner">
+                    <div class="bg-[#78B159] h-4 inline-block" style="width: 40%" title="固定支出"></div><div class="bg-[#FFB74D] h-4 inline-block transition-all duration-500" id="variable-bar" style="width: 0%" title="浮動支出"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 text-sm font-bold text-gray-600 bg-gray-50 p-4 rounded-xl">
+                    <div>✈️ 固定支出 (機+酒): <span class="text-[#78B159]">36,046</span></div>
+                    <div>🍱 浮動支出 (吃喝玩樂): <span class="text-[#E65100]" id="variable-spent">0</span></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div onclick="switchView('accounting')" class="nook-card p-6 flex items-center justify-between cursor-pointer hover:bg-[#FFFDE7]">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-[#FFF9C4] rounded-full flex items-center justify-center text-2xl mr-4">📝</div>
+                        <div>
+                            <h3 class="font-bold text-[#7C5E45]">記一筆</h3>
+                            <p class="text-xs text-gray-400">紀錄當下消費</p>
+                        </div>
+                    </div>
+                    <span class="text-[#E65100] font-black text-xl">→</span>
+                </div>
+                <div onclick="switchView('lists')" class="nook-card p-6 flex items-center justify-between cursor-pointer hover:bg-[#E0F2F1]">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-[#B2DFDB] rounded-full flex items-center justify-center text-2xl mr-4">🎒</div>
+                        <div>
+                            <h3 class="font-bold text-[#00695C]">行李與購物</h3>
+                            <p class="text-xs text-gray-400">檢查必帶物品</p>
+                        </div>
+                    </div>
+                    <span class="text-[#00695C] font-black text-xl">→</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 記帳頁面 -->
+        <section id="view-accounting" class="hidden space-y-6 fade-in">
+            <h2 class="text-2xl font-black text-[#7C5E45] border-l-4 border-[#78B159] pl-3">旅費記帳本</h2>
+            
+            <div class="nook-card p-6 bg-[#FDFBF0] border-2 border-[#F7E464]">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3">
+                    <div class="md:col-span-2">
+                        <label class="text-xs font-bold text-gray-500 pl-1">類別</label>
+                        <select id="acc-cat" class="w-full p-3 rounded-xl border border-gray-200 font-bold text-[#558B2F] bg-white outline-none focus:border-[#78B159]">
+                            <option>🍱 食</option><option>🚆 行</option><option>🎟️ 樂</option><option>🛍️ 買</option><option>🏨 住</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-6">
+                        <label class="text-xs font-bold text-gray-500 pl-1">項目名稱</label>
+                        <input type="text" id="acc-item" placeholder="例如: 餺飥麵午餐" class="w-full p-3 rounded-xl border border-gray-200 bg-white outline-none focus:border-[#78B159]">
+                    </div>
+                    <div class="md:col-span-4">
+                        <label class="text-xs font-bold text-gray-500 pl-1">金額</label>
+                        <div class="flex">
+                            <input type="number" id="acc-amt" placeholder="0" class="w-full p-3 rounded-l-xl border border-gray-200 border-r-0 bg-white outline-none focus:border-[#78B159]">
+                            <select id="acc-curr" class="bg-[#FFF9C4] border border-gray-200 border-l-0 rounded-r-xl px-2 font-bold text-[#E65100] outline-none">
+                                <option value="JPY">¥ JPY</option><option value="TWD">$ TWD</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="addExpense()" class="w-full bg-[#78B159] text-white font-bold py-3 rounded-xl shadow hover:bg-[#689F4D] transition">＋ 新增紀錄</button>
+            </div>
+
+            <div id="expense-list" class="space-y-3">
+                <div class="text-center text-gray-400 py-10">資料讀取中...</div>
+            </div>
+        </section>
+
+        <!-- 清單頁面 -->
+        <section id="view-lists" class="hidden space-y-6 fade-in">
+            <h2 class="text-2xl font-black text-[#7C5E45] border-l-4 border-[#64C3D9] pl-3">檢查清單</h2>
+            
+            <div class="flex space-x-2 bg-white p-1 rounded-xl shadow-sm border border-gray-200">
+                <button onclick="listMode='pack'; renderLists()" id="btn-pack" class="flex-1 py-2 rounded-lg font-bold transition bg-[#FFF3E0] text-[#E65100]">🎒 出發必帶</button>
+                <button onclick="listMode='shop'; renderLists()" id="btn-shop" class="flex-1 py-2 rounded-lg font-bold text-gray-500 hover:bg-gray-50 transition">🛍️ 購物願望</button>
+            </div>
+
+            <div class="flex gap-2">
+                <input type="text" id="list-input" class="flex-grow p-3 rounded-xl border-2 border-gray-200 outline-none focus:border-[#64C3D9]" placeholder="新增待辦事項...">
+                <button onclick="addListItem()" class="bg-[#64C3D9] text-white px-6 rounded-xl font-bold text-xl shadow hover:bg-[#4FA3B8]">+</button>
+            </div>
+
+            <div id="list-container" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <!-- Javascript will populate this -->
+            </div>
+        </section>
+
+        <!-- 行程頁面 -->
+        <section id="view-itinerary" class="hidden space-y-6 fade-in">
+            <h2 class="text-2xl font-black text-[#7C5E45] border-l-4 border-[#F7E464] pl-3">每日行程</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Day 1 -->
+                <div class="nook-card p-4 h-full">
+                    <div class="bg-[#78B159] text-white py-1 px-3 rounded-lg inline-block text-xs font-bold mb-2">3/13 (五) Day 1</div>
+                    <h3 class="font-black text-lg text-[#594A3D] mb-3">啟程與溫泉</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start"><span class="text-xl mr-2">🛬</span><div><span class="font-bold block">10:35 抵達成田</span><span class="text-xs text-gray-500">IT200 / 領取 JR Pass</span></div></li>
+                        <li class="flex items-start"><span class="text-xl mr-2">🚆</span><div><span class="font-bold block">11:44 N'EX 往新宿</span><span class="text-xs text-gray-500">轉乘 Kaiji 特急 (13:30)</span></div></li>
+                        <li class="flex items-start"><span class="text-xl mr-2">🏡</span><div><span class="font-bold block">15:00 古民家 Check-in</span><span class="text-xs text-gray-500">石和溫泉站搭計程車</span></div></li>
+                    </ul>
+                </div>
+                <!-- Day 2 -->
+                <div class="nook-card p-4 h-full">
+                    <div class="bg-[#78B159] text-white py-1 px-3 rounded-lg inline-block text-xs font-bold mb-2">3/14 (六) Day 2</div>
+                    <h3 class="font-black text-lg text-[#594A3D] mb-3">歷史與自然</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start"><span class="text-xl mr-2">🏯</span><div><span class="font-bold block">09:00 惠林寺</span><span class="text-xs text-gray-500">武田信玄長眠之地</span></div></li>
+                        <li class="flex items-start"><span class="text-xl mr-2">🍓</span><div><span class="font-bold block">11:00 草莓吃到飽</span><span class="text-xs text-gray-500">Gourmet 苺前田 (預約制)</span></div></li>
+                        <li class="flex items-start"><span class="text-xl mr-2">🏞️</span><div><span class="font-bold block">13:30 昇仙峽</span><span class="text-xs text-gray-500">絕美溪谷散策</span></div></li>
+                    </ul>
+                </div>
+                <!-- Day 3 -->
+                <div class="nook-card p-4 h-full border-2 border-[#E65100]">
+                    <div class="bg-[#E65100] text-white py-1 px-3 rounded-lg inline-block text-xs font-bold mb-2">3/15 (日) Day 3 ★移動日</div>
+                    <h3 class="font-black text-lg text-[#594A3D] mb-3">前進河口湖</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start bg-[#FFF3E0] p-2 rounded-lg"><span class="text-xl mr-2">🚌</span><div><span class="font-bold block text-[#E65100]">10:08 直達巴士 (必搭)</span><span class="text-xs text-[#E65100]">石和溫泉南口發車</span></div></li>
+                        <li class="flex items-start"><span class="text-xl mr-2">🏘️</span><div><span class="font-bold block">12:00 西湖療癒之里根場</span><span class="text-xs text-gray-500">綠線巴士 / 合掌造建築</span></div></li>
+                        <li class="flex items-start"><span class="text-xl mr-2">🏨</span><div><span class="font-bold block">16:30 入住 HOTORI</span><span class="text-xs text-gray-500">大石公園旁 / 富士山景</span></div></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 交通頁面 -->
+        <section id="view-transport" class="hidden space-y-6 fade-in">
+            <h2 class="text-2xl font-black text-[#7C5E45] border-l-4 border-[#64C3D9] pl-3">交通攻略</h2>
+            <div class="bg-[#E0F7FA] border-2 border-[#64C3D9] p-6 rounded-xl">
+                <h3 class="text-xl font-bold text-[#006064] mb-2">🚌 河口湖周遊巴士</h3>
+                <div class="flex items-center justify-between text-sm font-bold text-gray-600 mb-4">
+                    <span>河口湖站</span>
+                    <span class="flex-grow border-b-4 border-dotted border-[#64C3D9] mx-2 relative top-[-4px]"></span>
+                    <span>大石公園</span>
+                </div>
+                <p class="text-sm text-[#006064]">
+                    🔴 <span class="font-black">紅線 (Red Line)</span>：每 15 分鐘一班，前往飯店、美術館、纜車。<br>
+                    🟢 <span class="font-black">綠線 (Green Line)</span>：前往西湖根場，班次較少請注意。
+                </p>
+            </div>
+            
+            <div class="bg-[#FFF3E0] border-2 border-[#FFB74D] p-6 rounded-xl">
+                <h3 class="text-xl font-bold text-[#E65100] mb-2">🚆 富士回遊 (返程)</h3>
+                <p class="text-sm text-[#E65100] mb-2">Day 5 直達新宿，全車指定席，建議提早 1 個月訂票。</p>
+                <ul class="text-sm text-gray-700 font-bold">
+                    <li>12:04 發車 (回遊 16 號)</li>
+                    <li>14:04 發車 (回遊 20 號)</li>
+                </ul>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-[#78B159] text-white py-6 mt-auto hidden text-center text-sm font-bold" id="main-footer">
+        © 2026 山梨甲斐旅 | 共用代碼: <span id="footer-id">--</span>
+    </footer>
+
+    <script>
+        // --- 核心變數與設定 ---
+        const FIXED_COST = 36046; // 機票 + 住宿
+        const RATE = 0.215; // 匯率
+        let db, auth;
+        let appId = null; // 這就是「旅費代碼」
+        let expenses = [];
+        let packList = [];
+        let shopList = [];
+        let listMode = 'pack';
+
+        // --- 初始化 ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 檢查網址參數是否有 ID (新功能)
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlId = urlParams.get('id');
+            if(urlId) {
+                // 如果網址帶有 ID，優先使用並填入輸入框
+                document.getElementById('travel-id-input').value = urlId;
+            }
+
+            // 檢查是否有儲存的 Config 與 ID
+            checkLogin(urlId);
+        });
+
+        // 檢查登入狀態
+        async function checkLogin(urlId = null) {
+            const savedId = localStorage.getItem('nook_travel_id');
+            const savedConfig = localStorage.getItem('nook_firebase_config');
+
+            // 預覽環境自動帶入
+            let envConfig = null;
+            try { if(typeof __firebase_config !== 'undefined') envConfig = JSON.parse(__firebase_config); } catch(e){}
+
+            // 優先使用 localStorage，沒有則使用環境變數
+            let configToUse = savedConfig ? JSON.parse(savedConfig) : envConfig;
+
+            // 邏輯：如果有網址 ID 且有 Config，直接自動登入並儲存
+            if (urlId && configToUse) {
+                appId = urlId;
+                localStorage.setItem('nook_travel_id', urlId);
+                showAppUI();
+                await initFirebase(configToUse);
+            }
+            // 否則走原本邏輯
+            else if (savedId && configToUse) {
+                appId = savedId;
+                showAppUI();
+                await initFirebase(configToUse);
+            } else {
+                // 無資料，顯示登入遮罩
+                document.getElementById('login-modal').classList.remove('hidden');
+                // 如果是預覽環境，自動幫使用者填入 Config
+                if(envConfig) {
+                    localStorage.setItem('nook_firebase_config', JSON.stringify(envConfig));
+                }
+            }
+        }
+
+        function showAppUI() {
+            document.getElementById('login-modal').classList.add('hidden');
+            document.getElementById('main-nav').classList.remove('hidden');
+            document.getElementById('main-content').classList.remove('hidden');
+            document.getElementById('main-footer').classList.remove('hidden');
+            document.getElementById('id-badge').innerText = `ID: ${appId}`;
+            document.getElementById('footer-id').innerText = appId;
+            switchView('dashboard');
+        }
+
+        // 初始化 Firebase
+        async function initFirebase(config) {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(config);
+            }
+            auth = firebase.auth();
+            db = firebase.firestore();
+
+            // 匿名登入
+            await auth.signInAnonymously();
+            
+            // 開始監聽 (路徑包含 appId)
+            setupListeners();
+        }
+
+        function setupListeners() {
+            // 1. 監聽記帳
+            db.collection('artifacts').doc(appId).collection('public').doc('data').collection('expenses')
+                .orderBy('time', 'desc')
+                .onSnapshot(snapshot => {
+                    expenses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderAccounting();
+                    updateDashboard();
+                }, err => console.error("Sync Error:", err));
+
+            // 2. 監聽清單
+            db.collection('artifacts').doc(appId).collection('public').doc('data').collection('lists')
+                .orderBy('time', 'asc')
+                .onSnapshot(snapshot => {
+                    const all = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    packList = all.filter(i => i.type === 'pack');
+                    shopList = all.filter(i => i.type === 'shop');
+                    renderLists();
+                });
+        }
+
+        // --- 登入與設定相關 ---
+        function saveTravelId() {
+            const id = document.getElementById('travel-id-input').value.trim();
+            const configStored = localStorage.getItem('nook_firebase_config');
+            
+            if (!configStored) {
+                alert('⚠️ 請先設定下方的雲端資料庫 (Firebase Config)！');
+                document.getElementById('config-panel').classList.remove('hidden');
+                return;
+            }
+            if (!id) {
+                alert('請輸入代碼 (例如: Trip2026)');
+                return;
+            }
+            
+            localStorage.setItem('nook_travel_id', id);
+            
+            // 清除網址參數，避免重整後邏輯混亂，但這在靜態頁面可能無效
+            // 改為直接 reload
+            location.href = window.location.pathname; 
+        }
+
+        function copyShareLink() {
+            if (!appId) return;
+            const url = window.location.href.split('?')[0] + '?id=' + appId;
+            navigator.clipboard.writeText(url).then(() => {
+                const toast = document.getElementById("toast");
+                toast.className = "show";
+                setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
+            }).catch(err => {
+                alert('複製失敗，請手動複製網址：\n' + url);
+            });
+        }
+
+        function toggleConfigPanel() {
+            const panel = document.getElementById('config-panel');
+            panel.classList.toggle('hidden');
+            const existing = localStorage.getItem('nook_firebase_config');
+            if(existing) document.getElementById('config-input').value = existing;
+        }
+
+        function saveConfig() {
+            const raw = document.getElementById('config-input').value.trim();
+            try {
+                let cleanRaw = raw;
+                if(raw.includes('=')) cleanRaw = raw.split('=')[1].trim();
+                if(cleanRaw.endsWith(';')) cleanRaw = cleanRaw.slice(0, -1);
+                
+                JSON.parse(cleanRaw); // 驗證 JSON
+                localStorage.setItem('nook_firebase_config', cleanRaw);
+                alert('✅ 設定已儲存！請輸入代碼開始使用。');
+                document.getElementById('config-panel').classList.add('hidden');
+            } catch(e) {
+                alert('❌ 格式錯誤！請確保複製的是完整的 { ... } 內容。');
+            }
+        }
+
+        function logout() {
+            if(confirm('要登出並更換代碼嗎？')) {
+                localStorage.removeItem('nook_travel_id');
+                window.location.href = window.location.pathname; // 回首頁不帶參數
+            }
+        }
+
+        // --- 功能邏輯 ---
+        
+        // 記帳
+        async function addExpense() {
+            const cat = document.getElementById('acc-cat').value;
+            const item = document.getElementById('acc-item').value;
+            const amt = parseFloat(document.getElementById('acc-amt').value);
+            const curr = document.getElementById('acc-curr').value;
+            if(!item || !amt) return;
+
+            await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('expenses').add({
+                time: Date.now(), cat, item, amt, curr
+            });
+            
+            document.getElementById('acc-item').value = '';
+            document.getElementById('acc-amt').value = '';
+            // alert('記帳成功！'); // 移除 alert 體驗更好
+        }
+
+        async function delExpense(id) {
+            if(confirm('確定刪除這筆紀錄？')) {
+                await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('expenses').doc(id).delete();
+            }
+        }
+
+        function renderAccounting() {
+            const list = document.getElementById('expense-list');
+            list.innerHTML = '';
+            if(expenses.length === 0) {
+                list.innerHTML = `<div class="text-center text-gray-400 py-10">這裡還空空的，開始記帳吧！</div>`;
+                return;
+            }
+            
+            expenses.forEach(ex => {
+                const twd = ex.curr === 'JPY' ? Math.round(ex.amt * RATE) : ex.amt;
+                const idParam = `'${ex.id}'`;
+                list.innerHTML += `
+                    <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition">
+                        <div class="flex items-center">
+                            <span class="w-10 h-10 rounded-full bg-[#F1F8E9] text-xl flex items-center justify-center mr-3 select-none">${ex.cat.substring(0,2)}</span>
+                            <div>
+                                <div class="font-bold text-[#594A3D]">${ex.item}</div>
+                                <div class="text-xs text-gray-400">${ex.amt} ${ex.curr}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="font-bold text-[#E65100] mr-4">$${twd}</span>
+                            <button onclick="delExpense(${idParam})" class="text-gray-300 hover:text-red-500 font-bold px-2">×</button>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        // 清單
+        async function addListItem() {
+            const val = document.getElementById('list-input').value;
+            if(!val) return;
+            await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('lists').add({
+                time: Date.now(), text: val, type: listMode, checked: false
+            });
+            document.getElementById('list-input').value = '';
+        }
+
+        async function delListItem(id) {
+            await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('lists').doc(id).delete();
+        }
+
+        function renderLists() {
+            const container = document.getElementById('list-container');
+            const btnPack = document.getElementById('btn-pack');
+            const btnShop = document.getElementById('btn-shop');
+            
+            // Toggle Button Styles
+            if(listMode === 'pack') {
+                btnPack.className = "flex-1 py-2 rounded-lg font-bold transition bg-[#FFF3E0] text-[#E65100]";
+                btnShop.className = "flex-1 py-2 rounded-lg font-bold transition text-gray-500 hover:bg-gray-50";
+            } else {
+                btnShop.className = "flex-1 py-2 rounded-lg font-bold transition bg-[#E0F2F1] text-[#00695C]";
+                btnPack.className = "flex-1 py-2 rounded-lg font-bold transition text-gray-500 hover:bg-gray-50";
+            }
+
+            container.innerHTML = '';
+            const currentList = listMode === 'pack' ? packList : shopList;
+            if(currentList.length === 0) {
+                container.innerHTML = `<div class="col-span-1 md:col-span-2 text-center text-gray-400 py-6">清單是空的</div>`;
+                return;
+            }
+            
+            currentList.forEach(item => {
+                const idParam = `'${item.id}'`;
+                container.innerHTML += `
+                    <div class="flex items-center justify-between bg-white p-4 rounded-xl border border-gray-100 hover:shadow-md transition">
+                        <span class="font-bold text-gray-700 ml-2">${item.text}</span>
+                        <button onclick="delListItem(${idParam})" class="text-gray-300 hover:text-red-500 font-bold px-2">×</button>
+                    </div>`;
+            });
+        }
+
+        // 總覽更新
+        function updateDashboard() {
+            let varTotal = 0;
+            expenses.forEach(e => { varTotal += (e.curr === 'JPY' ? Math.round(e.amt * RATE) : parseFloat(e.amt)); });
+            document.getElementById('variable-spent').innerText = new Intl.NumberFormat().format(varTotal);
+            document.getElementById('total-spent').innerText = new Intl.NumberFormat().format(FIXED_COST + varTotal);
+            
+            const total = FIXED_COST + varTotal;
+            // 避免除以零
+            if(total > 0) {
+                const varPercent = Math.min((varTotal / total) * 100, 100);
+                document.getElementById('variable-bar').style.width = varPercent + '%';
+            }
+        }
+
+        // 頁面切換
+        function switchView(viewId) {
+            document.querySelectorAll('main > section').forEach(el => { el.classList.add('hidden'); el.classList.remove('fade-in'); });
+            const target = document.getElementById(`view-${viewId}`);
+            if(target) { target.classList.remove('hidden'); void target.offsetWidth; target.classList.add('fade-in'); window.scrollTo(0,0); }
+            
+            // 更新導覽列狀態
+            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+            const navBtn = document.getElementById(`nav-${viewId}`);
+            if(navBtn) navBtn.classList.add('active');
+            
+            if(viewId === 'dashboard') updateDashboard();
+        }
+
+        function closeMenu() {
+            document.getElementById('mobile-menu').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
