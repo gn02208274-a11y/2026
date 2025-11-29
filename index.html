@@ -3,14 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2026 山梨甲斐旅 (除錯增強版)</title>
+    <title>2026 山梨甲斐旅 (最終修復版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;800&display=swap" rel="stylesheet">
-    
-    <!-- 網站圖示 (Favicon) -->
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🍃%3C/text%3E%3C/svg%3E">
 
-    <!-- Firebase Libraries -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -18,7 +15,6 @@
     <style>
         :root { --ac-green: #78B159; --ac-cream: #FDFBF0; --ac-brown: #7C5E45; --ac-blue: #64C3D9; --ac-yellow: #F7E464; --ac-text: #594A3D; --ac-orange: #FFB74D; }
         body { font-family: 'M PLUS Rounded 1c', sans-serif; background-color: var(--ac-cream); color: var(--ac-text); background-image: radial-gradient(#E6F2D6 15%, transparent 16%), radial-gradient(#E6F2D6 15%, transparent 16%); background-size: 30px 30px; background-position: 0 0, 15px 15px; }
-        
         .nook-card { background-color: white; border-radius: 1rem; box-shadow: 4px 4px 0 rgba(124, 94, 69, 0.1); border: 2px solid #E0E0E0; transition: transform 0.2s; }
         .nook-card:hover { transform: translateY(-2px); box-shadow: 6px 6px 0 rgba(124, 94, 69, 0.15); }
         .nook-btn { border-radius: 9999px; font-weight: 800; transition: all 0.2s; cursor: pointer; }
@@ -31,12 +27,10 @@
         #toast { visibility: hidden; min-width: 250px; margin-left: -125px; background-color: #333; color: #fff; text-align: center; border-radius: 50px; padding: 16px; position: fixed; z-index: 1000; left: 50%; bottom: 30px; font-size: 14px; opacity: 0; transition: opacity 0.5s, bottom 0.5s; }
         #toast.show { visibility: visible; opacity: 1; bottom: 50px; }
         
-        /* 詳細行程樣式 */
         .timeline-line { position: absolute; left: 1.25rem; top: 0; bottom: 0; border-left: 4px dashed var(--ac-brown); z-index: 0; }
         .transport-card { background-color: #E0F7FA; border: 2px dashed var(--ac-blue); border-radius: 1rem; padding: 0.75rem; margin-top: 0.75rem; font-size: 0.85rem; color: #006064; position: relative; }
         .transport-card::before { content: "✈️ DAL"; position: absolute; top: -10px; right: 10px; background: var(--ac-blue); color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
         
-        /* 巴士圖樣式 */
         .bus-route-container { position: relative; padding: 20px 0; } .bus-line-red { border-top: 4px solid #E53935; position: relative; margin: 20px 0; } .bus-line-green { border-top: 4px solid #43A047; position: relative; margin: 20px 0; }
         .bus-stop { position: absolute; top: -12px; width: 20px; height: 20px; background: white; border-radius: 50%; border: 3px solid #ccc; transform: translateX(-50%); } .bus-stop.active { border-color: #004D40; background: #B2DFDB; width: 24px; height: 24px; top: -14px; z-index: 10; }
         .bus-label { position: absolute; top: 20px; transform: translateX(-50%); font-size: 0.75rem; text-align: center; width: 80px; line-height: 1.2; font-weight: bold; color: var(--ac-text); } .bus-label-top { position: absolute; top: -45px; transform: translateX(-50%); font-size: 0.85rem; text-align: center; width: 120px; font-weight: 800; }
@@ -56,7 +50,7 @@
             <p class="text-sm text-gray-500 mb-6 font-bold">請輸入「旅費代碼」與旅伴同步資料</p>
             
             <div class="space-y-4">
-                <input type="text" id="travel-id-input" placeholder="設定一個代碼 (例: Trip2026)" class="w-full bg-white border-2 border-gray-300 rounded-xl p-3 text-center font-bold text-lg text-[#7C5E45] outline-none focus:border-[#78B159]">
+                <input type="text" id="travel-id-input-final" placeholder="設定一個代碼 (例: Trip2026)" class="w-full bg-white border-2 border-gray-300 rounded-xl p-3 text-center font-bold text-lg text-[#7C5E45] outline-none focus:border-[#78B159]">
                 <button onclick="saveTravelId()" class="w-full bg-[#78B159] text-white font-black py-3 rounded-xl shadow-md nook-btn text-lg hover:bg-[#689F4D]">🚀 進入網站</button>
             </div>
 
@@ -64,10 +58,9 @@
                 <button onclick="toggleConfigPanel()" class="text-xs text-gray-400 font-bold underline hover:text-gray-600">第一次使用？請先點此設定雲端資料庫</button>
             </div>
             
-            <!-- Config 設定區 -->
             <div id="config-panel" class="hidden mt-4 text-left bg-gray-50 p-3 rounded-lg border border-gray-200">
                 <p class="text-xs text-gray-500 mb-2 font-bold">請貼上 Firebase Config:</p>
-                <textarea id="config-input" class="w-full h-32 text-[11px] bg-white p-2 rounded border border-gray-300 font-mono mb-2 shadow-inner" placeholder='const firebaseConfig = { ... }'></textarea>
+                <textarea id="config-input-final" class="w-full h-32 text-[11px] bg-white p-2 rounded border border-gray-300 font-mono mb-2 shadow-inner" placeholder='const firebaseConfig = { ... }'></textarea>
                 <button onclick="saveConfig()" class="w-full bg-[#F7E464] text-[#7C5E45] font-bold py-2 rounded-lg text-sm hover:bg-[#FFD54F]">儲存並自動修復格式</button>
             </div>
         </div>
@@ -82,7 +75,6 @@
                         <span class="leaf-icon"></span>
                     </div>
                     <span class="font-extrabold text-xl text-[#FDFBF0] tracking-wider hidden sm:block">Nook Travel</span>
-                    <!-- 連線狀態燈 -->
                     <div id="connection-status" class="w-3 h-3 rounded-full bg-red-400 border border-white" title="未連線"></div>
                 </div>
                 
@@ -255,7 +247,7 @@
         document.addEventListener('DOMContentLoaded', async () => {
             const urlParams = new URLSearchParams(window.location.search);
             const urlId = urlParams.get('id');
-            if(urlId) document.getElementById('travel-id-input').value = urlId;
+            if(urlId) document.getElementById('travel-id-input-final').value = urlId;
             checkLogin(urlId);
         });
 
@@ -299,21 +291,14 @@
                 auth = firebase.auth();
                 db = firebase.firestore();
                 await auth.signInAnonymously();
-                
-                // 更新連線狀態燈
                 document.getElementById('connection-status').className = "w-3 h-3 rounded-full bg-green-500 border border-white animate-pulse";
                 document.getElementById('connection-status').title = "已連線";
-                
                 setupListeners();
             } catch (e) {
                 console.error("Firebase Init Error:", e);
                 document.getElementById('connection-status').className = "w-3 h-3 rounded-full bg-red-600 border border-white";
                 alert(`⚠️ 連線失敗: ${e.message}`);
-                // 如果是 API Key 錯誤，提示重設
-                if(e.code === "auth/invalid-api-key") {
-                    localStorage.removeItem('nook_firebase_config');
-                    location.reload();
-                }
+                if(e.code === "auth/invalid-api-key") { localStorage.removeItem('nook_firebase_config'); location.reload(); }
             }
         }
 
@@ -339,7 +324,6 @@
                 });
         }
 
-        // --- Render Functions ---
         function renderDay(dayNum) {
             document.querySelectorAll('.day-tab').forEach(tab => { tab.classList.remove('bg-[#78B159]','text-white'); tab.classList.add('bg-[#FDFBF0]','text-gray-500'); });
             document.getElementById(`tab-day${dayNum}`).classList.remove('bg-[#FDFBF0]','text-gray-500');
@@ -363,9 +347,8 @@
             else { container.innerHTML = `<div class="bg-[#FFF3E0] border-2 border-[#FFB74D] p-6 rounded-xl"><h3 class="text-xl font-bold text-[#E65100] mb-2">🚆 富士回遊 (返程)</h3><p class="text-sm text-[#E65100] mb-2">Day 5 直達新宿，全車指定席，建議提早 1 個月訂票。</p><ul class="text-sm text-gray-700 font-bold"><li>12:04 發車 (回遊 16 號)</li><li>14:04 發車 (回遊 20 號)</li></ul></div>`; }
         }
 
-        // --- Common UI Functions ---
         function saveTravelId() {
-            const id = document.getElementById('travel-id-input').value.trim();
+            const id = document.getElementById('travel-id-input-final').value.trim();
             const configStored = localStorage.getItem('nook_firebase_config');
             if (!configStored) { alert('⚠️ 請先設定下方的雲端資料庫 (Firebase Config)！'); document.getElementById('config-panel').classList.remove('hidden'); return; }
             if (!id) { alert('請輸入代碼 (例如: Trip2026)'); return; }
@@ -379,23 +362,17 @@
             navigator.clipboard.writeText(url).then(() => { const toast = document.getElementById("toast"); toast.className = "show"; setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000); }).catch(err => { alert('複製失敗，請手動複製網址：\n' + url); });
         }
 
-        function toggleConfigPanel() { document.getElementById('config-panel').classList.toggle('hidden'); const existing = localStorage.getItem('nook_firebase_config'); if(existing) document.getElementById('config-input').value = existing; }
+        function toggleConfigPanel() { document.getElementById('config-panel').classList.toggle('hidden'); const existing = localStorage.getItem('nook_firebase_config'); if(existing) document.getElementById('config-input-final').value = existing; }
 
         function saveConfig() {
-            let raw = document.getElementById('config-input').value.trim();
+            let raw = document.getElementById('config-input-final').value.trim();
             try {
-                // 1. 去除註解
                 raw = raw.replace(/\/\/.*$/gm, ''); 
-                // 2. 擷取物件部分
                 if(raw.includes('=')) raw = raw.substring(raw.indexOf('=') + 1).trim();
                 if(raw.endsWith(';')) raw = raw.slice(0, -1).trim();
-                // 3. 修復 Key 引號
                 let jsonString = raw.replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":');
-                // 4. 修復尾隨逗號
                 jsonString = jsonString.replace(/,(\s*})/g, '$1');
-                // 5. 確保大括號
                 if (!jsonString.startsWith('{')) jsonString = '{' + jsonString + '}';
-
                 const config = JSON.parse(jsonString); 
                 localStorage.setItem('nook_firebase_config', JSON.stringify(config));
                 alert('✅ 設定已儲存！請輸入代碼開始使用。'); document.getElementById('config-panel').classList.add('hidden'); setTimeout(() => location.reload(), 500);
