@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2026 山梨甲斐旅 (最終修復版)</title>
+    <title>2026 山梨甲斐旅 (手機修復版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;800&display=swap" rel="stylesheet">
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🍃%3C/text%3E%3C/svg%3E">
@@ -56,10 +56,13 @@
 
             <div class="mt-8 pt-4 border-t border-gray-200">
                 <button onclick="toggleConfigPanel()" class="text-xs text-gray-400 font-bold underline hover:text-gray-600">第一次使用？請先點此設定雲端資料庫</button>
+                <div class="mt-2">
+                    <button onclick="resetAllData()" class="text-[10px] text-red-300 hover:text-red-500">重置所有設定</button>
+                </div>
             </div>
             
             <div id="config-panel" class="hidden mt-4 text-left bg-gray-50 p-3 rounded-lg border border-gray-200">
-                <p class="text-xs text-gray-500 mb-2 font-bold">請貼上 Firebase Config:</p>
+                <p class="text-xs text-gray-500 mb-2 font-bold">請貼上 Firebase Config (整段):</p>
                 <textarea id="config-input-final" class="w-full h-32 text-[11px] bg-white p-2 rounded border border-gray-300 font-mono mb-2 shadow-inner" placeholder='const firebaseConfig = { ... }'></textarea>
                 <button onclick="saveConfig()" class="w-full bg-[#F7E464] text-[#7C5E45] font-bold py-2 rounded-lg text-sm hover:bg-[#FFD54F]">儲存並自動修復格式</button>
             </div>
@@ -364,19 +367,52 @@
 
         function toggleConfigPanel() { document.getElementById('config-panel').classList.toggle('hidden'); const existing = localStorage.getItem('nook_firebase_config'); if(existing) document.getElementById('config-input-final').value = existing; }
 
+        function resetAllData() {
+            if(confirm('確定要重置所有設定嗎？\n這會清除已儲存的代碼與鑰匙，需要重新輸入。')) {
+                localStorage.removeItem('nook_travel_id');
+                localStorage.removeItem('nook_firebase_config');
+                location.reload();
+            }
+        }
+
         function saveConfig() {
             let raw = document.getElementById('config-input-final').value.trim();
+            
+            // 1. 基礎清理：取代全形/智慧引號，移除註解
+            raw = raw.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
+            raw = raw.replace(/\/\/.*$/gm, ''); 
+            
+            // 2. 嘗試抓取 { ... } 區塊
+            const firstBrace = raw.indexOf('{');
+            const lastBrace = raw.lastIndexOf('}');
+            
+            if (firstBrace === -1 || lastBrace === -1) {
+                alert('❌ 格式錯誤：找不到 { } 大括號。\n請確保您複製了完整的 Firebase 設定程式碼。');
+                return;
+            }
+            
+            let objectString = raw.substring(firstBrace, lastBrace + 1);
+            
             try {
-                raw = raw.replace(/\/\/.*$/gm, ''); 
-                if(raw.includes('=')) raw = raw.substring(raw.indexOf('=') + 1).trim();
-                if(raw.endsWith(';')) raw = raw.slice(0, -1).trim();
-                let jsonString = raw.replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":');
-                jsonString = jsonString.replace(/,(\s*})/g, '$1');
-                if (!jsonString.startsWith('{')) jsonString = '{' + jsonString + '}';
-                const config = JSON.parse(jsonString); 
+                // 使用 Function 建構子來解析 JS 物件 (比 Regex 轉 JSON 更穩健)
+                // 這樣可以容許 unquoted keys, trailing commas, comments 等
+                const parseFn = new Function(`return ${objectString}`);
+                const config = parseFn();
+                
+                // 簡單驗證
+                if (!config.apiKey || !config.appId) {
+                    throw new Error("缺少 apiKey 或 appId");
+                }
+
                 localStorage.setItem('nook_firebase_config', JSON.stringify(config));
-                alert('✅ 設定已儲存！請輸入代碼開始使用。'); document.getElementById('config-panel').classList.add('hidden'); setTimeout(() => location.reload(), 500);
-            } catch(e) { console.error(e); alert('❌ 格式無法辨識！\n請確認您複製的是 Firebase 給的那段完整程式碼。\n\n錯誤詳情: ' + e.message); }
+                alert('✅ 設定成功！\n現在請輸入您的「旅費代碼」開始使用。');
+                document.getElementById('config-panel').classList.add('hidden');
+                setTimeout(() => location.reload(), 500);
+                
+            } catch(e) {
+                console.error(e);
+                alert('❌ 解析失敗：\n請確認您貼上的是正確的 Firebase Config 內容。\n\n錯誤: ' + e.message);
+            }
         }
 
         function logout() { if(confirm('要登出並更換代碼嗎？')) { localStorage.removeItem('nook_travel_id'); window.location.href = window.location.pathname; } }
