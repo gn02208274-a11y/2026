@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2026 山梨甲斐旅</title>
+    <title>2026 山梨甲斐旅 (救援版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;800&display=swap" rel="stylesheet">
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🍃%3C/text%3E%3C/svg%3E">
@@ -16,31 +16,24 @@
     <style>
         :root { --ac-green: #78B159; --ac-cream: #FDFBF0; --ac-brown: #7C5E45; --ac-blue: #64C3D9; --ac-yellow: #F7E464; --ac-text: #594A3D; }
         body { font-family: 'M PLUS Rounded 1c', sans-serif; background-color: var(--ac-cream); color: var(--ac-text); background-image: radial-gradient(#E6F2D6 15%, transparent 16%), radial-gradient(#E6F2D6 15%, transparent 16%); background-size: 30px 30px; background-position: 0 0, 15px 15px; -webkit-tap-highlight-color: transparent; }
-        
-        /* UI Components */
         .nook-card { background-color: white; border-radius: 1rem; box-shadow: 4px 4px 0 rgba(124, 94, 69, 0.1); border: 2px solid #E0E0E0; transition: transform 0.1s; }
         .nook-card:active { transform: scale(0.98); }
         .nook-btn { border-radius: 9999px; font-weight: 800; transition: all 0.1s; cursor: pointer; user-select: none; }
         .nook-btn:active { transform: scale(0.95); }
         
-        /* Loading Overlay */
-        #loading-overlay { position: fixed; inset: 0; background: #78B159; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s; }
+        /* Loading Overlay with fallback pointer-events */
+        #loading-overlay { position: fixed; inset: 0; background: #78B159; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s; pointer-events: auto; }
+        #loading-overlay.fade-out { opacity: 0; pointer-events: none; }
         .spinner { width: 40px; height: 40px; border: 4px solid #FDFBF0; border-top-color: #F7E464; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Navigation */
         .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(255,255,255,0.6); font-size: 0.7rem; font-weight: bold; transition: all 0.2s; }
         .nav-item.active { color: white; transform: translateY(-2px); }
         .nav-icon { font-size: 1.2rem; margin-bottom: 2px; }
-
-        /* Timeline & Transport */
         .timeline-line { position: absolute; left: 1rem; top: 0; bottom: 0; border-left: 2px dashed #ccc; z-index: 0; }
         .transport-badge { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: #E0F7FA; color: #006064; font-weight: bold; border: 1px solid #4DD0E1; display: inline-block; margin-top: 4px; }
-
-        /* Modal */
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(4px); }
-        .modal-content { background: #FDFBF0; border-radius: 1.5rem; padding: 2rem; width: 100%; max-width: 360px; border: 4px solid #F7E464; box-shadow: 0 10px 25px rgba(0,0,0,0.3); animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        @keyframes popUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-content { background: #FDFBF0; border-radius: 1.5rem; padding: 2rem; width: 100%; max-width: 360px; border: 4px solid #F7E464; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
     </style>
 </head>
 <body class="flex flex-col h-screen overflow-hidden">
@@ -49,7 +42,9 @@
     <div id="loading-overlay">
         <div class="spinner mb-4"></div>
         <div class="text-white font-bold text-xl tracking-widest">Nook Travel</div>
-        <div class="text-white/80 text-xs mt-2">正在連線到無人島...</div>
+        <div class="text-white/80 text-xs mt-2">載入中...</div>
+        <!-- 緊急按鈕：如果卡住超過3秒會自動顯示 -->
+        <button onclick="forceUnlock()" id="emergency-btn" class="hidden mt-8 text-[10px] text-white underline bg-black/20 px-2 py-1 rounded">卡住了？點此強制進入</button>
     </div>
 
     <!-- Login Modal -->
@@ -64,7 +59,8 @@
             <button onclick="saveTravelId()" class="w-full bg-[#78B159] text-white font-black py-3 rounded-xl shadow-md nook-btn text-lg hover:bg-[#689F4D]">🚀 出發！</button>
             
             <div class="mt-6 pt-4 border-t border-gray-200">
-                <button onclick="toggleConfigPanel()" class="text-xs text-gray-400 font-bold underline">第一次使用？設定雲端資料庫</button>
+                <button onclick="toggleConfigPanel()" class="text-xs text-gray-400 font-bold underline">設定雲端資料庫</button>
+                <button onclick="resetAll()" class="text-[10px] text-red-400 ml-4 hover:text-red-600">重置所有設定</button>
             </div>
             
             <div id="config-panel" class="hidden mt-3 text-left bg-gray-100 p-3 rounded-lg">
@@ -81,13 +77,12 @@
             <span class="mr-2">🍃</span> 2026 山梨旅
         </div>
         <button onclick="copyShareLink()" class="bg-black/20 px-3 py-1 rounded-full text-xs font-bold hover:bg-black/30 transition flex items-center">
-            <span id="header-id">ID: --</span> <span class="ml-1 opacity-70">📋</span>
+            <span id="header-id">ID: --</span>
         </button>
     </header>
 
-    <!-- Main Content (Scrollable) -->
+    <!-- Main Content -->
     <main id="main-container" class="flex-grow overflow-y-auto bg-[#FDFBF0] p-4 pb-24 space-y-6 hidden">
-        
         <!-- Dashboard -->
         <section id="view-dashboard" class="fade-in">
             <div class="nook-card p-5 border-t-4 border-[#F7E464] mb-4">
@@ -104,21 +99,11 @@
                     <span class="text-[#E65100]">浮動: <span id="variable-spent">0</span></span>
                 </div>
             </div>
-
             <div class="grid grid-cols-2 gap-3 mb-4">
-                <div onclick="switchView('accounting')" class="nook-card p-4 flex flex-col items-center justify-center bg-[#FFFDE7]">
-                    <span class="text-2xl mb-1">📝</span><span class="font-bold text-[#7C5E45] text-sm">記一筆</span>
-                </div>
-                <div onclick="switchView('lists')" class="nook-card p-4 flex flex-col items-center justify-center bg-[#E0F2F1]">
-                    <span class="text-2xl mb-1">🎒</span><span class="font-bold text-[#00695C] text-sm">清單</span>
-                </div>
+                <div onclick="switchView('accounting')" class="nook-card p-4 flex flex-col items-center justify-center bg-[#FFFDE7]"><span class="text-2xl mb-1">📝</span><span class="font-bold text-[#7C5E45] text-sm">記一筆</span></div>
+                <div onclick="switchView('lists')" class="nook-card p-4 flex flex-col items-center justify-center bg-[#E0F2F1]"><span class="text-2xl mb-1">🎒</span><span class="font-bold text-[#00695C] text-sm">清單</span></div>
             </div>
-
-            <div class="nook-card p-4 border-l-4 border-[#64C3D9]" onclick="switchView('transport')">
-                <h3 class="font-bold text-[#006064] text-sm mb-1">🚌 重點交通提醒</h3>
-                <p class="text-xs text-gray-600">Day 3 移動日: 石和溫泉 → 河口湖</p>
-                <div class="text-lg font-black text-[#E65100] mt-1">10:08 發車 (直達)</div>
-            </div>
+            <div class="nook-card p-4 border-l-4 border-[#64C3D9]" onclick="switchView('transport')"><h3 class="font-bold text-[#006064] text-sm mb-1">🚌 重點交通提醒</h3><p class="text-xs text-gray-600">Day 3 移動日: 石和溫泉 → 河口湖</p><div class="text-lg font-black text-[#E65100] mt-1">10:08 發車 (直達)</div></div>
         </section>
 
         <!-- Itinerary -->
@@ -173,17 +158,10 @@
             </div>
             <div class="nook-card p-4 border-l-4 border-[#B8860B]">
                 <h3 class="font-bold text-[#7C5E45] mb-2">🏡 住宿資訊</h3>
-                <div class="mb-2">
-                    <div class="font-bold text-sm">フクロウの御宿 (前2晚)</div>
-                    <div class="text-xs text-gray-500">石和溫泉站搭計程車約10分</div>
-                </div>
-                <div>
-                    <div class="font-bold text-sm">HOTORI no HOTEL (後2晚)</div>
-                    <div class="text-xs text-gray-500">紅線巴士「音樂盒之森」站旁</div>
-                </div>
+                <div class="mb-2"><div class="font-bold text-sm">フクロウの御宿 (前2晚)</div><div class="text-xs text-gray-500">石和溫泉站搭計程車約10分</div></div>
+                <div><div class="font-bold text-sm">HOTORI no HOTEL (後2晚)</div><div class="text-xs text-gray-500">紅線巴士「音樂盒之森」站旁</div></div>
             </div>
         </section>
-
     </main>
 
     <!-- Bottom Nav -->
@@ -196,7 +174,6 @@
     </nav>
 
     <script>
-        // Data & Config
         const FIXED_COST = 36046;
         const RATE = 0.215;
         let db, auth, appId;
@@ -210,45 +187,73 @@
             5: [{t:"11:00",i:"👋",h:"退房",d:"前往河口湖站"},{t:"13:00",i:"🚆",h:"富士回遊",d:"直達新宿"},{t:"17:00",i:"🛫",h:"前往機場",d:"N'EX 往成田"},{t:"20:25",i:"✈️",h:"返台",d:"IT203"}]
         };
 
-        // Init
+        // Safety Valve: Force unlock if stuck
+        setTimeout(() => {
+            const overlay = document.getElementById('loading-overlay');
+            if(overlay && !overlay.classList.contains('hidden') && !overlay.classList.contains('fade-out')) {
+                document.getElementById('emergency-btn').classList.remove('hidden');
+            }
+        }, 3000);
+
         document.addEventListener('DOMContentLoaded', async () => {
             const urlId = new URLSearchParams(window.location.search).get('id');
             if(urlId) document.getElementById('travel-id-input').value = urlId;
-            await checkLogin(urlId);
+            try {
+                await checkLogin(urlId);
+            } catch(e) {
+                console.error("Critical Init Error:", e);
+                forceUnlock();
+            }
         });
 
         async function checkLogin(urlId) {
             const savedId = localStorage.getItem('nook_travel_id');
             const savedConfig = localStorage.getItem('nook_firebase_config');
-            
-            // Auto Login Logic
             const targetId = urlId || savedId;
             
             if (targetId && savedConfig) {
                 appId = targetId;
                 localStorage.setItem('nook_travel_id', appId);
                 document.getElementById('header-id').innerText = `ID: ${appId}`;
-                await initFirebase(JSON.parse(savedConfig));
                 
-                // Success: Hide Modal & Overlay
-                document.getElementById('login-modal').classList.add('hidden');
-                document.getElementById('main-container').classList.remove('hidden');
-                switchView('dashboard');
-                setTimeout(() => { document.getElementById('loading-overlay').style.opacity = '0'; }, 500);
-                setTimeout(() => { document.getElementById('loading-overlay').classList.add('hidden'); }, 1000);
+                try {
+                    await initFirebase(JSON.parse(savedConfig));
+                    // Success path
+                    document.getElementById('login-modal').classList.add('hidden');
+                    document.getElementById('main-container').classList.remove('hidden');
+                    switchView('dashboard');
+                    const overlay = document.getElementById('loading-overlay');
+                    overlay.classList.add('fade-out');
+                    setTimeout(() => overlay.classList.add('hidden'), 500);
+                } catch(e) {
+                    // Config corrupted
+                    alert("設定檔似乎有問題，請重新設定。");
+                    resetAll();
+                }
             } else {
-                document.getElementById('loading-overlay').classList.add('hidden'); // Show Login
+                // Not logged in
+                const overlay = document.getElementById('loading-overlay');
+                overlay.classList.add('fade-out');
+                setTimeout(() => overlay.classList.add('hidden'), 500);
                 document.getElementById('login-modal').classList.remove('hidden');
             }
         }
 
+        function forceUnlock() {
+            document.getElementById('loading-overlay').classList.add('hidden');
+            document.getElementById('login-modal').classList.remove('hidden');
+        }
+
         async function initFirebase(config) {
+            if (!window.firebase) throw new Error("Firebase SDK未載入");
             if (!firebase.apps.length) firebase.initializeApp(config);
             auth = firebase.auth();
             db = firebase.firestore();
             await auth.signInAnonymously();
-            
-            // Realtime Listeners
+            setupListeners();
+        }
+
+        function setupListeners() {
             db.collection('artifacts').doc(appId).collection('public').doc('data').collection('expenses').orderBy('time', 'desc')
                 .onSnapshot(snap => {
                     expenses = snap.docs.map(doc => ({id: doc.id, ...doc.data()}));
@@ -263,7 +268,6 @@
                 });
         }
 
-        // --- Functions ---
         function saveTravelId() {
             const id = document.getElementById('travel-id-input').value.trim();
             if(!localStorage.getItem('nook_firebase_config')) return alert('請先設定雲端資料庫！');
@@ -292,12 +296,17 @@
             }
         }
 
+        function resetAll() {
+            if(confirm('確定要重置所有設定嗎？')) {
+                localStorage.removeItem('nook_travel_id');
+                localStorage.removeItem('nook_firebase_config');
+                location.reload();
+            }
+        }
+
         function copyShareLink() {
             const url = window.location.href.split('?')[0] + '?id=' + appId;
-            navigator.clipboard.writeText(url).then(() => {
-                const toast = document.getElementById("toast");
-                toast.className = "show"; setTimeout(() => toast.className = "", 3000);
-            });
+            navigator.clipboard.writeText(url).then(() => alert('連結已複製！'));
         }
 
         function addExpense() {
@@ -315,6 +324,7 @@
         }
 
         function delExpense(id) {
+            // 直接刪除，不確認
             db.collection('artifacts').doc(appId).collection('public').doc('data').collection('expenses').doc(id).delete();
         }
 
@@ -328,10 +338,10 @@
         }
 
         function delListItem(id) {
+            // 直接刪除，不確認
             db.collection('artifacts').doc(appId).collection('public').doc('data').collection('lists').doc(id).delete();
         }
 
-        // --- Renderers ---
         function renderAccounting() {
             const list = document.getElementById('expense-list');
             list.innerHTML = '';
@@ -350,7 +360,7 @@
                         </div>
                         <div class="flex items-center">
                             <span class="font-bold text-[#E65100] text-sm mr-3">$${twd.toLocaleString()}</span>
-                            <button onclick="delExpense('${ex.id}')" class="text-gray-300 px-2">×</button>
+                            <button onclick="delExpense('${ex.id}')" class="text-gray-300 w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50 hover:text-red-500">×</button>
                         </div>
                     </div>`;
             });
@@ -360,7 +370,6 @@
             const list = document.getElementById('list-container');
             const data = listMode === 'pack' ? packList : shopList;
             
-            // Toggle Tab Styles
             document.getElementById('btn-pack').className = `flex-1 py-2 rounded-xl font-bold transition border-2 ${listMode==='pack' ? 'bg-[#FFF3E0] text-[#E65100] border-[#FFCC80]' : 'bg-white text-gray-400 border-gray-100'}`;
             document.getElementById('btn-shop').className = `flex-1 py-2 rounded-xl font-bold transition border-2 ${listMode==='shop' ? 'bg-[#E0F2F1] text-[#00695C] border-[#80CBC4]' : 'bg-white text-gray-400 border-gray-100'}`;
 
@@ -371,7 +380,7 @@
                 list.innerHTML += `
                     <div class="flex justify-between items-center bg-white p-3 rounded-xl border border-gray-100">
                         <span class="font-bold text-[#594A3D] ml-2">${item.text}</span>
-                        <button onclick="delListItem('${item.id}')" class="text-gray-300 px-2">×</button>
+                        <button onclick="delListItem('${item.id}')" class="text-gray-300 w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50 hover:text-red-500">×</button>
                     </div>`;
             });
         }
@@ -423,7 +432,6 @@
         }
 
         function toggleConfigPanel() { document.getElementById('config-panel').classList.toggle('hidden'); }
-        function logout() { if(confirm('登出並切換代碼？')) { localStorage.removeItem('nook_travel_id'); location.reload(); } }
     </script>
 </body>
 </html>
