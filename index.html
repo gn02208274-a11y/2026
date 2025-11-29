@@ -11,7 +11,466 @@
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🍃%3C/text%3E%3C/svg%3E">
 
     <!-- Firebase Libraries -->
+    <script src="https://www.gstatic.com/f<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 山梨甲斐旅 (終極共用版)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;800&display=swap" rel="stylesheet">
+    
+    <!-- 網站圖示 (Favicon) -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🍃%3C/text%3E%3C/svg%3E">
+
+    <!-- Firebase Libraries -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root { --ac-green: #78B159; --ac-cream: #FDFBF0; --ac-brown: #7C5E45; --ac-blue: #64C3D9; --ac-yellow: #F7E464; --ac-text: #594A3D; --ac-orange: #FFB74D; }
+        body { font-family: 'M PLUS Rounded 1c', sans-serif; background-color: var(--ac-cream); color: var(--ac-text); background-image: radial-gradient(#E6F2D6 15%, transparent 16%), radial-gradient(#E6F2D6 15%, transparent 16%); background-size: 30px 30px; background-position: 0 0, 15px 15px; }
+        
+        /* 通用卡片樣式 */
+        .nook-card { background-color: white; border-radius: 1rem; box-shadow: 4px 4px 0 rgba(124, 94, 69, 0.1); border: 2px solid #E0E0E0; transition: transform 0.2s; }
+        .nook-card:hover { transform: translateY(-2px); box-shadow: 6px 6px 0 rgba(124, 94, 69, 0.15); }
+        
+        /* 按鈕與標籤 */
+        .nook-btn { border-radius: 9999px; font-weight: 800; transition: all 0.2s; cursor: pointer; }
+        .nook-btn:active { transform: scale(0.95); }
+        .leaf-icon { display: inline-block; width: 1.2em; height: 1.2em; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2378B159'%3E%3Cpath d='M12 2C9 2 4 5 4 10C4 13 6 15 8 16L9 22H11L10 16.5C10 16.5 13 17 15 15C18 12 20 8 20 5C20 3 18 2 12 2ZM12 4C16 4 17 7 15 10C13 13 10 14 10 14C10 14 11.5 10 9 7C7 5 5 6 5 6C5 6 7 4 12 4Z'/%3E%3C/svg%3E"); background-size: contain; background-repeat: no-repeat; vertical-align: middle; }
+
+        /* 導覽列 */
+        .nav-link { cursor: pointer; padding: 0.5rem 1rem; border-radius: 9999px; font-weight: bold; color: white; opacity: 0.8; transition: all 0.2s; }
+        .nav-link:hover, .nav-link.active { background-color: rgba(255,255,255,0.2); opacity: 1; }
+        
+        /* Modal */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; display: flex; justify-content: center; align-items: center; padding: 1rem; backdrop-filter: blur(4px); }
+        .modal-content { background: #FDFBF0; border-radius: 1.5rem; padding: 2rem; width: 100%; max-width: 400px; border: 4px solid #F7E464; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        
+        /* Toast Notification */
+        #toast { visibility: hidden; min-width: 250px; margin-left: -125px; background-color: #333; color: #fff; text-align: center; border-radius: 50px; padding: 16px; position: fixed; z-index: 1000; left: 50%; bottom: 30px; font-size: 14px; opacity: 0; transition: opacity 0.5s, bottom 0.5s; }
+        #toast.show { visibility: visible; opacity: 1; bottom: 50px; }
+
+        /* 詳細行程樣式 (找回原本的功能) */
+        .timeline-line { position: absolute; left: 1.25rem; top: 0; bottom: 0; border-left: 4px dashed var(--ac-brown); z-index: 0; }
+        .transport-card { background-color: #E0F7FA; border: 2px dashed var(--ac-blue); border-radius: 1rem; padding: 0.75rem; margin-top: 0.75rem; font-size: 0.85rem; color: #006064; position: relative; }
+        .transport-card::before { content: "✈️ DAL"; position: absolute; top: -10px; right: 10px; background: var(--ac-blue); color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+        
+        /* 巴士圖樣式 */
+        .bus-route-container { position: relative; padding: 20px 0; } .bus-line-red { border-top: 4px solid #E53935; position: relative; margin: 20px 0; } .bus-line-green { border-top: 4px solid #43A047; position: relative; margin: 20px 0; }
+        .bus-stop { position: absolute; top: -12px; width: 20px; height: 20px; background: white; border-radius: 50%; border: 3px solid #ccc; transform: translateX(-50%); } .bus-stop.active { border-color: #004D40; background: #B2DFDB; width: 24px; height: 24px; top: -14px; z-index: 10; }
+        .bus-label { position: absolute; top: 20px; transform: translateX(-50%); font-size: 0.75rem; text-align: center; width: 80px; line-height: 1.2; font-weight: bold; color: var(--ac-text); } .bus-label-top { position: absolute; top: -45px; transform: translateX(-50%); font-size: 0.85rem; text-align: center; width: 120px; font-weight: 800; }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <!-- Toast Notification -->
+    <div id="toast">已複製連結！</div>
+
+    <!-- 登入與設定遮罩 -->
+    <div id="login-modal" class="modal">
+        <div class="modal-content text-center">
+            <div class="w-20 h-20 bg-white rounded-full mx-auto mb-4 flex items-center justify-center border-4 border-[#78B159] shadow-sm">
+                <span class="leaf-icon w-12 h-12"></span>
+            </div>
+            <h2 class="text-2xl font-black text-[#7C5E45] mb-2">開始旅程</h2>
+            <p class="text-sm text-gray-500 mb-6 font-bold">請輸入「旅費代碼」與旅伴同步資料</p>
+            
+            <div class="space-y-4">
+                <input type="text" id="travel-id-input" placeholder="設定一個代碼 (例: Trip2026)" class="w-full bg-white border-2 border-gray-300 rounded-xl p-3 text-center font-bold text-lg text-[#7C5E45] outline-none focus:border-[#78B159]">
+                <button onclick="saveTravelId()" class="w-full bg-[#78B159] text-white font-black py-3 rounded-xl shadow-md nook-btn text-lg hover:bg-[#689F4D]">🚀 進入網站</button>
+            </div>
+
+            <div class="mt-8 pt-4 border-t border-gray-200">
+                <button onclick="toggleConfigPanel()" class="text-xs text-gray-400 font-bold underline hover:text-gray-600">第一次使用？請先點此設定雲端資料庫</button>
+            </div>
+            
+            <!-- Config 設定區 (預設隱藏) -->
+            <div id="config-panel" class="hidden mt-4 text-left bg-gray-50 p-3 rounded-lg border border-gray-200">
+                <p class="text-xs text-gray-500 mb-2 font-bold">請貼上 Firebase Config (整段複製):</p>
+                <textarea id="config-input" class="w-full h-32 text-[11px] bg-white p-2 rounded border border-gray-300 font-mono mb-2 shadow-inner" placeholder='const firebaseConfig = { ... }'></textarea>
+                <button onclick="saveConfig()" class="w-full bg-[#F7E464] text-[#7C5E45] font-bold py-2 rounded-lg text-sm hover:bg-[#FFD54F]">儲存並修復格式</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 頂部導覽列 -->
+    <nav class="bg-[#78B159] shadow-md sticky top-0 z-50 hidden" id="main-nav">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-2 cursor-pointer" onclick="switchView('dashboard')">
+                    <div class="w-10 h-10 bg-[#FDFBF0] rounded-full flex items-center justify-center border-2 border-[#F7E464] transform -rotate-12">
+                        <span class="leaf-icon"></span>
+                    </div>
+                    <span class="font-extrabold text-xl text-[#FDFBF0] tracking-wider hidden sm:block">Nook Travel</span>
+                </div>
+                
+                <!-- 電腦版選單 -->
+                <div class="hidden md:flex space-x-1">
+                    <a onclick="switchView('dashboard')" class="nav-link active" id="nav-dashboard">總覽</a>
+                    <a onclick="switchView('itinerary')" class="nav-link" id="nav-itinerary">行程</a>
+                    <a onclick="switchView('transport')" class="nav-link" id="nav-transport">交通</a>
+                    <a onclick="switchView('accounting')" class="nav-link" id="nav-accounting">記帳</a>
+                    <a onclick="switchView('lists')" class="nav-link" id="nav-lists">清單</a>
+                    <a onclick="switchView('hotels')" class="nav-link" id="nav-hotels">住宿</a>
+                    <a onclick="switchView('tips')" class="nav-link" id="nav-tips">貼士</a>
+                </div>
+
+                <!-- 手機版漢堡選單按鈕 -->
+                <div class="md:hidden">
+                    <button onclick="document.getElementById('mobile-menu').classList.toggle('hidden')" class="text-white font-bold p-2">
+                        <span class="text-2xl">☰</span>
+                    </button>
+                </div>
+
+                <div class="flex items-center ml-4">
+                     <span class="text-xs bg-black/20 text-white px-3 py-1 rounded-full font-bold cursor-pointer hover:bg-black/30 transition" onclick="logout()" id="id-badge">ID: --</span>
+                </div>
+            </div>
+        </div>
+        <!-- 手機版下拉選單 -->
+        <div id="mobile-menu" class="hidden md:hidden bg-[#689F4D] p-2">
+            <a onclick="switchView('dashboard'); closeMenu()" class="block px-4 py-2 text-white font-bold hover:bg-black/10 rounded">📊 總覽</a>
+            <a onclick="switchView('itinerary'); closeMenu()" class="block px-4 py-2 text-white font-bold hover:bg-black/10 rounded">📅 行程</a>
+            <a onclick="switchView('transport'); closeMenu()" class="block px-4 py-2 text-white font-bold hover:bg-black/10 rounded">🚌 交通</a>
+            <a onclick="switchView('accounting'); closeMenu()" class="block px-4 py-2 text-white font-bold hover:bg-black/10 rounded">💰 記帳</a>
+            <a onclick="switchView('lists'); closeMenu()" class="block px-4 py-2 text-white font-bold hover:bg-black/10 rounded">📝 清單</a>
+            <a onclick="switchView('hotels'); closeMenu()" class="block px-4 py-2 text-white font-bold hover:bg-black/10 rounded">🏡 住宿</a>
+            <a onclick="switchView('tips'); closeMenu()" class="block px-4 py-2 text-white font-bold hover:bg-black/10 rounded">💡 貼士</a>
+        </div>
+    </nav>
+
+    <!-- 主要內容區 -->
+    <main id="main-content" class="container mx-auto px-4 py-6 max-w-4xl flex-grow hidden">
+        
+        <!-- 總覽頁面 -->
+        <section id="view-dashboard" class="space-y-6 fade-in">
+            <div class="text-center mb-6">
+                <h1 class="text-2xl md:text-3xl font-black text-[#7C5E45] mb-2">2026 山梨甲斐・靜謐之旅</h1>
+                <div class="flex justify-center gap-2 mb-2">
+                    <p class="text-sm text-gray-500 font-bold bg-white inline-block px-3 py-1 rounded-full border border-gray-200">兩人同行 • No Beef • 雲端同步</p>
+                </div>
+                <button onclick="copyShareLink()" class="text-xs bg-[#78B159] text-white px-3 py-1.5 rounded-full font-bold shadow-sm hover:bg-[#689F4D] transition flex items-center justify-center mx-auto">🔗 複製邀請連結</button>
+            </div>
+
+            <div class="nook-card p-6 border-t-8 border-[#F7E464]">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-4">
+                    <h2 class="text-xl font-black text-[#7C5E45] flex items-center mb-2 md:mb-0"><span class="text-2xl mr-2">💰</span> 預算監控</h2>
+                    <div class="text-right">
+                        <span class="text-sm text-gray-500 font-bold">總花費 (TWD)</span>
+                        <div class="text-3xl font-black text-[#E65100]" id="total-spent">--</div>
+                    </div>
+                </div>
+                <div class="w-full bg-gray-100 rounded-full h-4 mb-4 overflow-hidden shadow-inner">
+                    <div class="bg-[#78B159] h-4 inline-block" style="width: 40%" title="固定支出"></div><div class="bg-[#FFB74D] h-4 inline-block transition-all duration-500" id="variable-bar" style="width: 0%" title="浮動支出"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 text-sm font-bold text-gray-600 bg-gray-50 p-4 rounded-xl">
+                    <div>✈️ 固定支出 (機+酒): <span class="text-[#78B159]">36,046</span></div>
+                    <div>🍱 浮動支出 (吃喝玩樂): <span class="text-[#E65100]" id="variable-spent">0</span></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div onclick="switchView('itinerary')" class="nook-card p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-[#FFF9C4]">
+                    <span class="text-3xl mb-1">📅</span> <span class="font-bold text-[#7C5E45]">看行程</span>
+                </div>
+                <div onclick="switchView('accounting')" class="nook-card p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-[#E0F7FA]">
+                    <span class="text-3xl mb-1">📝</span> <span class="font-bold text-[#006064]">記一筆</span>
+                </div>
+                <div onclick="switchView('lists')" class="nook-card p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-[#FFEBEE]">
+                    <span class="text-3xl mb-1">🎒</span> <span class="font-bold text-[#E53935]">物品清單</span>
+                </div>
+                <div onclick="switchView('transport')" class="nook-card p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-[#E8F5E9]">
+                    <span class="text-3xl mb-1">🚌</span> <span class="font-bold text-[#558B2F]">交通攻略</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 行程頁面 (恢復詳細版) -->
+        <section id="view-itinerary" class="hidden space-y-6 fade-in">
+            <h2 class="text-2xl font-black text-[#7C5E45] border-l-4 border-[#F7E464] pl-3">每日行程</h2>
+            
+            <!-- Day Tabs -->
+            <div class="flex overflow-x-auto space-x-2 pb-2">
+                <button onclick="renderDay(1)" class="flex-1 py-2 px-4 rounded-full font-bold whitespace-nowrap bg-[#FDFBF0] border border-gray-200 text-gray-500 day-tab" id="tab-day1">3/13 (五)</button>
+                <button onclick="renderDay(2)" class="flex-1 py-2 px-4 rounded-full font-bold whitespace-nowrap bg-[#FDFBF0] border border-gray-200 text-gray-500 day-tab" id="tab-day2">3/14 (六)</button>
+                <button onclick="renderDay(3)" class="flex-1 py-2 px-4 rounded-full font-bold whitespace-nowrap bg-[#FDFBF0] border border-gray-200 text-gray-500 day-tab" id="tab-day3">3/15 (日)</button>
+                <button onclick="renderDay(4)" class="flex-1 py-2 px-4 rounded-full font-bold whitespace-nowrap bg-[#FDFBF0] border border-gray-200 text-gray-500 day-tab" id="tab-day4">3/16 (一)</button>
+                <button onclick="renderDay(5)" class="flex-1 py-2 px-4 rounded-full font-bold whitespace-nowrap bg-[#FDFBF0] border border-gray-200 text-gray-500 day-tab" id="tab-day5">3/17 (二)</button>
+            </div>
+
+            <div id="day-content">
+                <!-- Javascript Content -->
+            </div>
+        </section>
+
+        <!-- 交通頁面 (恢復詳細版) -->
+        <section id="view-transport" class="hidden space-y-6 fade-in">
+            <h2 class="text-2xl font-black text-[#7C5E45] border-l-4 border-[#64C3D9] pl-3">交通攻略</h2>
+            
+            <div class="flex flex-col sm:flex-row gap-4 mb-4">
+                <button onclick="renderTransportDetail('day3')" class="flex-1 bg-[#E0F7FA] text-[#006064] py-3 rounded-xl font-bold border-2 border-[#64C3D9] hover:bg-[#B2EBF2]">🚌 Day 3 移動詳解</button>
+                <button onclick="renderTransportDetail('local')" class="flex-1 bg-[#E8F5E9] text-[#2E7D32] py-3 rounded-xl font-bold border-2 border-[#43A047] hover:bg-[#C8E6C9]">🗺️ 河口湖周遊巴士</button>
+                <button onclick="renderTransportDetail('return')" class="flex-1 bg-[#FFF3E0] text-[#E65100] py-3 rounded-xl font-bold border-2 border-[#FFB74D] hover:bg-[#FFE0B2]">🚆 回程電車時刻</button>
+            </div>
+
+            <div id="transport-detail-container">
+                <!-- 預設顯示 -->
+                <div class="nook-card p-6 bg-[#E0F7FA] border-l-8 border-[#64C3D9]">
+                    <h3 class="font-black text-xl text-[#006064] mb-4 flex items-center"><span class="text-2xl mr-2">🗺️</span> 河口湖周遊巴士</h3>
+                    <div class="bus-route-container">
+                        <div class="bus-label-top text-[#E53935] font-black">🔴 紅線 (Red Line)</div>
+                        <div class="bus-line-red"></div>
+                        <div class="bus-stop" style="left: 10%;"></div><div class="bus-label" style="left: 10%; color:#555;"><strong>河口湖站</strong></div>
+                        <div class="bus-stop active" style="left: 65%;"></div><div class="bus-label" style="left: 65%; color: #004D40; font-black;">★ 飯店</div>
+                        <div class="bus-stop" style="left: 90%;"></div><div class="bus-label" style="left: 90%; color:#555;"><strong>大石公園</strong></div>
+                    </div>
+                    <div class="bus-route-container mt-10">
+                        <div class="bus-label-top text-[#43A047] font-black">🟢 綠線 (Green Line)</div>
+                        <div class="bus-line-green"></div>
+                        <div class="bus-stop" style="left: 10%;"></div><div class="bus-label" style="left: 10%; color:#555;"><strong>河口湖站</strong></div>
+                        <div class="bus-stop active" style="left: 80%;"></div><div class="bus-label" style="left: 80%; color: #2E7D32; font-black;">★ 西湖<br>根場</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 記帳頁面 -->
+        <section id="view-accounting" class="hidden space-y-6 fade-in">
+            <h2 class="text-2xl font-black text-[#7C5E45] border-l-4 border-[#78B159] pl-3">旅費記帳本</h2>
+            <div class="nook-card p-6 bg-[#FDFBF0] border-2 border-[#F7E464]">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3">
+                    <div class="md:col-span-2"><select id="acc-cat" class="w-full p-3 rounded-xl border border-gray-200 font-bold text-[#558B2F] bg-white outline-none"><option>🍱 食</option><option>🚆 行</option><option>🎟️ 樂</option><option>🛍️ 買</option><option>🏨 住</option></select></div>
+                    <div class="md:col-span-6"><input type="text" id="acc-item" placeholder="例如: 餺飥麵午餐" class="w-full p-3 rounded-xl border border-gray-200 bg-white outline-none"></div>
+                    <div class="md:col-span-4 flex"><input type="number" id="acc-amt" placeholder="0" class="w-full p-3 rounded-l-xl border border-gray-200 border-r-0 bg-white outline-none"><select id="acc-curr" class="bg-[#FFF9C4] border border-gray-200 border-l-0 rounded-r-xl px-2 font-bold text-[#E65100] outline-none"><option value="JPY">¥ JPY</option><option value="TWD">$ TWD</option></select></div>
+                </div>
+                <button onclick="addExpense()" class="w-full bg-[#78B159] text-white font-bold py-3 rounded-xl shadow hover:bg-[#689F4D] transition">＋ 新增紀錄</button>
+            </div>
+            <div id="expense-list" class="space-y-3"><div class="text-center text-gray-400 py-10">資料讀取中...</div></div>
+        </section>
+
+        <!-- 清單頁面 -->
+        <section id="view-lists" class="hidden space-y-6 fade-in">
+            <h2 class="text-2xl font-black text-[#7C5E45] border-l-4 border-[#64C3D9] pl-3">檢查清單</h2>
+            <div class="flex space-x-2 bg-white p-1 rounded-xl shadow-sm border border-gray-200">
+                <button onclick="listMode='pack'; renderLists()" id="btn-pack" class="flex-1 py-2 rounded-lg font-bold transition bg-[#FFF3E0] text-[#E65100]">🎒 出發必帶</button>
+                <button onclick="listMode='shop'; renderLists()" id="btn-shop" class="flex-1 py-2 rounded-lg font-bold transition text-gray-500 hover:bg-gray-50">🛍️ 購物願望</button>
+            </div>
+            <div class="flex gap-2"><input type="text" id="list-input" class="flex-grow p-3 rounded-xl border-2 border-gray-200 outline-none focus:border-[#64C3D9]" placeholder="新增待辦事項..."><button onclick="addListItem()" class="bg-[#64C3D9] text-white px-6 rounded-xl font-bold text-xl shadow hover:bg-[#4FA3B8]">+</button></div>
+            <div id="list-container" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+        </section>
+
+        <!-- 住宿頁面 -->
+        <section id="view-hotels" class="hidden space-y-6 fade-in">
+            <h2 class="text-2xl font-black text-[#7C5E45] border-l-4 border-[#B8860B] pl-3">住宿情報</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="nook-card p-6 border-l-8 border-[#B8860B] h-full flex flex-col">
+                    <h3 class="text-xl font-black text-[#7C5E45]">🦉 前半段：フクロウの御宿 春日居館</h3>
+                    <p class="text-sm text-gray-600 mb-2 font-bold">3/13 - 3/15 (2晚)</p>
+                    <ul class="text-sm space-y-2 list-disc list-inside text-[#594A3D] flex-grow"><li>古民家改建、私人溫泉。</li><li>訂房網評分 8.5。</li><li>已付清 (NT$ 3,858)。</li></ul>
+                    <a href="https://maps.google.com/?q=Fukurou+No+Oyado+Kasugaikan" target="_blank" class="mt-4 text-center block w-full bg-[#FFF9C4] text-[#7C5E45] py-2 rounded-lg font-bold text-xs hover:bg-[#F7E464]">🗺️ 開啟地圖</a>
+                </div>
+                <div class="nook-card p-6 border-l-8 border-[#E57373] h-full flex flex-col">
+                    <h3 class="text-xl font-black text-[#7C5E45]">🏪 後半段：HOTORI no HOTEL BAN</h3>
+                    <p class="text-sm text-gray-600 mb-2 font-bold">3/15 - 3/17 (2晚)</p>
+                    <ul class="text-sm space-y-2 list-disc list-inside text-[#594A3D] flex-grow"><li>樓下全家、面湖、房間大。</li><li>訂房網評分 8.9。</li><li>已付清 (NT$ 9,922)。</li></ul>
+                    <a href="https://maps.google.com/?q=HOTORI+no+HOTEL+BAN" target="_blank" class="mt-4 text-center block w-full bg-[#FFEBEE] text-[#E53935] py-2 rounded-lg font-bold text-xs hover:bg-[#FFCDD2]">🗺️ 開啟地圖</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- 貼士頁面 -->
+        <section id="view-tips" class="hidden space-y-6 fade-in">
+            <h2 class="text-2xl font-black text-[#7C5E45] border-l-4 border-[#FFCC80] pl-3">飲食指南</h2>
+            <div class="nook-card p-6 border-4 border-[#FFCC80]">
+                <h3 class="text-xl font-black text-[#EF6C00] mb-4">No Beef / No Alcohol</h3>
+                <div class="space-y-4">
+                    <div class="bg-[#FFF3E0] p-4 rounded-xl"><div class="font-bold text-[#7C5E45]">🍲 Hoto Fudo (餺飥麵)</div><div class="text-sm text-gray-600">味噌蔬菜底，安全首選。</div></div>
+                    <div class="bg-[#FFF3E0] p-4 rounded-xl"><div class="font-bold text-[#7C5E45]">🐷 甲州富士櫻豬</div><div class="text-sm text-gray-600">炸豬排或涮涮鍋，不含牛。</div></div>
+                    <div class="bg-[#FFF3E0] p-4 rounded-xl"><div class="font-bold text-[#7C5E45]">🍓 Gourmet 苺前田</div><div class="text-sm text-gray-600">30分鐘吃到飽，煉乳免費。</div></div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-[#78B159] text-white py-6 mt-auto hidden text-center text-sm font-bold" id="main-footer">
+        © 2026 山梨甲斐旅 | 共用代碼: <span id="footer-id">--</span>
+    </footer>
+
+    <script>
+        // --- 核心變數與設定 ---
+        const FIXED_COST = 36046; // 機票 + 住宿
+        const RATE = 0.215; // 匯率
+        let db, auth;
+        let appId = null; 
+        let expenses = [];
+        let packList = [];
+        let shopList = [];
+        let listMode = 'pack';
+
+        // --- 詳細行程資料 (已恢復) ---
+        const itineraryData = {
+            1: { title: "3/13 (五) Day 1: 抵達與溫泉", highlights: ["虎航 IT200", "N'EX", "古民家"], stay: "古民家", timeline: [ { time: "10:35", icon: "🛬", title: "抵達成田 (NRT)", desc: "IT200 抵達。領行李、過海關。", cost: "無", mapQuery: "Narita International Airport", transport: { mode: "N'EX", route: "成田 -> 新宿", duration: "80分", note: "建議 11:44 或 12:20" } }, { time: "11:44", icon: "🚆", title: "N'EX 前往新宿", desc: "搭乘 N'EX 成田特快。", cost: "¥3,270", mapQuery: "Shinjuku Station", transport: { mode: "特急", route: "新宿轉乘 Kaiji", duration: "轉乘時間約 20分", note: "9/10 月台" } }, { time: "13:30", icon: "🚄", title: "轉乘 Kaiji 特急", desc: "新宿轉乘 JR Kaiji 號往石和溫泉。", cost: "¥3,890", mapQuery: "Isawa-Onsen Station", transport: { mode: "Kaiji", route: "新宿 -> 石和溫泉", duration: "90分", note: "直達" } }, { time: "15:00", icon: "🚕", title: "前往民宿", desc: "石和溫泉站搭計程車至古民家。", cost: "約 ¥1,500", mapQuery: "フクロウの御宿 春日居館", transport: { mode: "Taxi", route: "車站 -> 民宿", duration: "10分", note: "南口排班計程車" } }, { time: "18:00", icon: "🍱", title: "晚餐", desc: "享用在車站買的便當或附近的餐廳。", cost: "約 ¥1,500/人" } ] },
+            2: { title: "3/14 (六) Day 2: 草莓與溪谷", highlights: ["Gourmet 苺", "昇仙峽", "炸豬排"], stay: "古民家", timeline: [ { time: "09:00", icon: "🏯", title: "惠林寺參拜", desc: "武田信玄長眠之地，庭園極美。", hours: "8:30 - 16:30", cost: "門票 ¥300", mapQuery: "Erinji Temple", transport: { mode: "Taxi", route: "民宿 -> 惠林寺", duration: "20分", note: "請民宿幫忙叫車" } }, { time: "11:00", icon: "🍓", title: "Gourmet 苺前田", desc: "高級草莓吃到飽 (30分)。", hours: "10:00 - 16:00 (需預約)", cost: "¥2,500/人", mapQuery: "Gourmet Strawberry Museum Maeda", transport: { mode: "Taxi", route: "惠林寺 -> 草莓園", duration: "30分", note: "車資約 ¥4000 (較貴但省時)" } }, { time: "13:30", icon: "🏞️", title: "昇仙峽", desc: "搭巴士前往，欣賞絕美溪谷。", hours: "全天開放", cost: "來回 ¥1,200", mapQuery: "Shosenkyo", transport: { mode: "巴士", route: "甲府站(南口4號) -> 昇仙峽口", duration: "30分", note: "山梨交通巴士" } }, { time: "18:30", icon: "🐷", title: "甲府晚餐", desc: "甲州富士櫻豬炸豬排。", hours: "17:00 - 21:00", cost: "約 ¥2,000/人", mapQuery: "Kofu Station", transport: { mode: "JR", route: "甲府 -> 石和溫泉", duration: "10分", note: "回程" } } ] },
+            3: { title: "3/15 (日) Day 3: 移動至河口湖", highlights: ["跨區巴士", "西湖根場", "大石公園"], stay: "HOTORI", timeline: [ { time: "10:08", icon: "🚌", title: "直達巴士", desc: "石和溫泉發車，前往河口湖站。", cost: "¥1,400/人", mapQuery: "Isawa-Onsen Station", transport: { mode: "富士急巴士", route: "石和溫泉 -> 河口湖站", duration: "50分", note: "必搭 10:08 班次!" } }, { time: "12:00", icon: "🏘️", title: "西湖療癒之里根場", desc: "參觀茅草屋聚落、吃午餐。", hours: "9:00 - 17:00", cost: "門票 ¥500", mapQuery: "Saiko Iyashi-no-Sato Nenba", transport: { mode: "綠線巴士", route: "河口湖站 -> 西湖根場", duration: "40分", note: "1號乘車處" } }, { time: "15:00", icon: "🌸", title: "大石公園", desc: "紅線巴士終點，免費入園。", hours: "全天開放 (商店~17:00)", cost: "免費", mapQuery: "Oishi Park", transport: { mode: "轉乘", route: "綠線回車站 -> 紅線去大石", duration: "60分", note: "需回河口湖站轉車" } }, { time: "16:30", icon: "🏨", title: "Check-in", desc: "入住 HOTORI Hotel。", cost: "已付", mapQuery: "HOTORI no HOTEL BAN", transport: { mode: "紅線巴士", route: "大石公園 -> 音樂盒之森", duration: "10分", note: "飯店在站牌旁" } } ] },
+            4: { title: "3/16 (一) Day 4: 天空鳥居與纜車", highlights: ["天空鳥居", "Hoto Fudo", "天上山纜車"], stay: "HOTORI", timeline: [ { time: "09:00", icon: "⛩️", title: "河口淺間神社 (天空鳥居)", desc: "早起前往遙拜所。拍攝巨大鳥居與富士山的夢幻合影。", hours: "9:00 - 16:00", cost: "協力金 ¥100", mapQuery: "Tenku no Torii", transport: { mode: "Taxi", route: "飯店 -> 遙拜所", duration: "約15分", note: "建議直接叫車上山" } }, { time: "11:30", icon: "🍜", title: "Hoto Fudo (北本店)", desc: "下山後，前往這間著名的餺飥麵餐廳享用午餐。", hours: "11:00 - 20:00", cost: "¥1,210", mapQuery: "Hoto Fudo Kawaguchiko North Main Shop", transport: { mode: "Taxi/Walk", route: "遙拜所 -> 餐廳", duration: "10-15分", note: "計程車下山最方便" } }, { time: "14:00", icon: "🚠", title: "河口湖纜車", desc: "搭乘纜車至天上山公園，俯瞰河口湖全景。可以吃烤糰子。", hours: "9:30 - 16:00 (平日)", cost: "來回 ¥900", mapQuery: "Mt. Fuji Panoramic Ropeway", transport: { mode: "紅線巴士", route: "音樂盒之森 -> 遊覽船/纜車口", duration: "約15分", note: "飯店旁搭車" } }, { time: "16:00", icon: "🎨", title: "久保田一竹美術館", desc: "參觀和服藝術 (12-3月週二休館，今日週一有開!)", hours: "10:00 - 16:30", cost: "¥1,300", mapQuery: "Itchiku Kubota Art Museum", transport: { mode: "紅線巴士", route: "纜車 -> 美術館", duration: "15分", note: "注意最後入館時間" } } ] },
+            5: { title: "3/17 (二) Day 5: 返程", highlights: ["富士回遊", "N'EX", "IT203"], stay: "家", timeline: [ { time: "11:00", icon: "👋", title: "退房 & 巴士", desc: "搭紅線巴士回河口湖站。", cost: "約 ¥400", mapQuery: "Kawaguchiko Station", transport: { mode: "紅線巴士", route: "飯店 -> 河口湖站", duration: "20分", note: "預留時間逛車站" } }, { time: "13:00", icon: "🚆", title: "富士回遊", desc: "特急直達新宿。週二無加班車。", cost: "¥4,130", mapQuery: "Shinjuku Station", transport: { mode: "富士回遊", route: "河口湖 -> 新宿", duration: "2hr", note: "預約 12:04 (回遊16) 或 14:04 (回遊20)" } }, { time: "17:00", icon: "🛫", title: "N'EX 往機場", desc: "新宿轉乘 N'EX。", cost: "¥3,270", mapQuery: "Narita International Airport", transport: { mode: "N'EX", route: "新宿 -> 成田", duration: "80分", note: "18:25 前抵達櫃檯" } }, { time: "20:25", icon: "✈️", title: "起飛返台", desc: "IT203 飛往 TPE。", cost: "已付", mapQuery: "Narita International Airport", transport: { mode: "飛行機", route: "NRT -> TPE", duration: "4hr", note: "再見了日本!" } } ] }
+        };
+
+        // --- 初始化 ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlId = urlParams.get('id');
+            if(urlId) document.getElementById('travel-id-input').value = urlId;
+            checkLogin(urlId);
+        });
+
+        async function checkLogin(urlId = null) {
+            const savedId = localStorage.getItem('nook_travel_id');
+            const savedConfig = localStorage.getItem('nook_firebase_config');
+            let envConfig = null;
+            try { if(typeof __firebase_config !== 'undefined') envConfig = JSON.parse(__firebase_config); } catch(e){}
+            let configToUse = savedConfig ? JSON.parse(savedConfig) : envConfig;
+
+            if (urlId && configToUse) {
+                appId = urlId;
+                localStorage.setItem('nook_travel_id', urlId);
+                showAppUI();
+                await initFirebase(configToUse);
+            } else if (savedId && configToUse) {
+                appId = savedId;
+                showAppUI();
+                await initFirebase(configToUse);
+            } else {
+                document.getElementById('login-modal').classList.remove('hidden');
+                if(envConfig) localStorage.setItem('nook_firebase_config', JSON.stringify(envConfig));
+            }
+        }
+
+        function showAppUI() {
+            document.getElementById('login-modal').classList.add('hidden');
+            document.getElementById('main-nav').classList.remove('hidden');
+            document.getElementById('main-content').classList.remove('hidden');
+            document.getElementById('main-footer').classList.remove('hidden');
+            document.getElementById('id-badge').innerText = `ID: ${appId}`;
+            document.getElementById('footer-id').innerText = appId;
+            switchView('dashboard');
+            renderDay(1); // 預載行程
+        }
+
+        async function initFirebase(config) {
+            try {
+                if (!firebase.apps.length) firebase.initializeApp(config);
+                auth = firebase.auth();
+                db = firebase.firestore();
+                await auth.signInAnonymously();
+                setupListeners();
+            } catch (e) {
+                if(e.code === "auth/invalid-api-key") {
+                    alert("⚠️ 雲端鑰匙 (API Key) 無效！\n請重新設定雲端資料庫。");
+                    localStorage.removeItem('nook_firebase_config');
+                    location.reload();
+                }
+            }
+        }
+
+        function setupListeners() {
+            db.collection('artifacts').doc(appId).collection('public').doc('data').collection('expenses')
+                .orderBy('time', 'desc')
+                .onSnapshot(snapshot => {
+                    expenses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderAccounting();
+                    updateDashboard();
+                });
+            db.collection('artifacts').doc(appId).collection('public').doc('data').collection('lists')
+                .orderBy('time', 'asc')
+                .onSnapshot(snapshot => {
+                    const all = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    packList = all.filter(i => i.type === 'pack');
+                    shopList = all.filter(i => i.type === 'shop');
+                    renderLists();
+                });
+        }
+
+        // --- Render Functions (恢復詳細版) ---
+        function renderDay(dayNum) {
+            document.querySelectorAll('.day-tab').forEach(tab => { tab.classList.remove('bg-[#78B159]','text-white'); tab.classList.add('bg-[#FDFBF0]','text-gray-500'); });
+            document.getElementById(`tab-day${dayNum}`).classList.remove('bg-[#FDFBF0]','text-gray-500');
+            document.getElementById(`tab-day${dayNum}`).classList.add('bg-[#78B159]','text-white');
+            
+            const data = itineraryData[dayNum];
+            const container = document.getElementById('day-content');
+            let html = `<div class="mb-4"><h3 class="text-xl font-black text-[#7C5E45]">${data.title}</h3></div>`;
+            data.timeline.forEach((item) => {
+                const mapLink = item.mapQuery ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.mapQuery)}" target="_blank" class="nook-btn inline-flex items-center mt-3 px-3 py-1 bg-[#64C3D9] text-white text-xs hover:bg-[#4FA3B8] shadow-sm transform hover:rotate-1"><span class="mr-1">🗺️</span> 導航</a>` : '';
+                let transportCard = '';
+                if(item.transport) {
+                    transportCard = `<div class="transport-card"><div class="flex justify-between items-start mb-1"><span class="font-black text-[#006064] text-sm">${item.transport.mode}</span><span class="text-xs font-bold text-[#00838F] bg-white px-2 rounded-full border border-[#00838F]">${item.transport.duration}</span></div><div class="text-sm font-bold text-[#7C5E45] mb-1">${item.transport.route}</div><div class="text-xs text-[#0097A7]">💡 ${item.transport.note}</div></div>`;
+                }
+                html += `<div class="relative pl-8 pb-6 group"><div class="timeline-line"></div><div class="absolute left-0 top-1 w-8 h-8 bg-[#FDFBF0] border-4 border-[#78B159] rounded-full flex items-center justify-center z-10 shadow-sm text-sm">${item.icon}</div><div class="bg-white p-4 rounded-2xl border-2 border-[#E0E0E0] shadow-sm hover:border-[#78B159] transition-colors h-full flex flex-col"><div class="flex justify-between items-baseline mb-1"><span class="font-black text-[#7C5E45] text-lg">${item.title}</span><span class="font-bold text-[#78B159] text-sm bg-[#F1F8E9] px-2 py-0.5 rounded-lg">${item.time}</span></div><p class="text-sm text-[#594A3D] mb-2 font-medium">${item.desc}</p><div class="flex flex-wrap gap-2 mb-2"><div class="text-xs text-[#E65100] font-bold bg-[#FFF3E0] inline-block px-2 py-1 rounded">💰 費用: ${item.cost}</div></div><div class="flex flex-col mt-auto">${transportCard}<div class="mt-1">${mapLink}</div></div></div></div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function renderTransportDetail(type) {
+            const container = document.getElementById('transport-detail-container');
+            if(type === 'day3') {
+                container.innerHTML = `<div class="nook-card p-6 bg-[#FFFDE7] border-l-8 border-[#F7E464]"><h3 class="font-black text-xl text-[#7C5E45] mb-4 flex items-center"><span class="text-2xl mr-2">🚌</span> Day 3: 石和溫泉 ➔ 河口湖</h3><p class="text-sm mb-4 font-bold text-[#594A3D]">關鍵班次：<span class="text-[#E65100] text-lg">10:08</span> 發車。錯過要等很久！</p><div class="bg-white p-4 rounded-xl border-2 border-[#FFF9C4] mb-4"><h4 class="font-bold text-[#FBC02D] mb-2">📍 候車處</h4><p class="text-sm text-[#7C5E45]">石和溫泉站 <strong>南口</strong> 巴士圓環，1號或2號乘車處。</p></div></div>`;
+            } else if(type === 'local') {
+                container.innerHTML = `<div class="nook-card p-6 bg-[#E0F7FA] border-l-8 border-[#64C3D9]"><h3 class="font-black text-xl text-[#006064] mb-4 flex items-center"><span class="text-2xl mr-2">🗺️</span> 河口湖周遊巴士</h3><div class="bus-route-container"><div class="bus-label-top text-[#E53935] font-black">🔴 紅線 (Red Line)</div><div class="bus-line-red"></div><div class="bus-stop" style="left: 10%;"></div><div class="bus-label" style="left: 10%; color:#555;"><strong>河口湖站</strong></div><div class="bus-stop active" style="left: 65%;"></div><div class="bus-label" style="left: 65%; color: #004D40; font-black;">★ 飯店</div><div class="bus-stop" style="left: 90%;"></div><div class="bus-label" style="left: 90%; color:#555;"><strong>大石公園</strong></div></div></div>`;
+            } else {
+                container.innerHTML = `<div class="bg-[#FFF3E0] border-2 border-[#FFB74D] p-6 rounded-xl"><h3 class="text-xl font-bold text-[#E65100] mb-2">🚆 富士回遊 (返程)</h3><p class="text-sm text-[#E65100] mb-2">Day 5 直達新宿，全車指定席，建議提早 1 個月訂票。</p><ul class="text-sm text-gray-700 font-bold"><li>12:04 發車 (回遊 16 號)</li><li>14:04 發車 (回遊 20 號)</li></ul></div>`;
+            }
+        }
+
+        // --- Common UI Functions ---
+        function saveTravelId() {
+            const id = document.getElementById('travel-id-input').value.trim();
+            const configStored = localStorage.getItem('nook_firebase_config');
+            if (!configStored) { alert('⚠️ 請先設定下方的雲端資料庫 (Firebase Config)！'); document.getElementById('config-panel').classList.remove('hidden'); return; }
+            if (!id) { alert('請輸入代碼 (例如: Trip2026)'); return; }
+            localStorage.setItem('nook_travel_id', id);
+            location.href = window.location.pathname; 
+        }
+
+        function copyShareLink() {
+            if (!appId) return;
+            const url = window.location.href.split('?')[0] + '?id=' + appId;
+            navigator.clipboard.writeText(url).then(() => {
+                const toast = document.getElementById("toast"); toast.className = "show"; setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
+            }).catch(err => { alert('複製失敗，請手動複製網址：\n' + url); });
+        }
+
+        function toggleConfigPanel() { document.getElementById('config-panel').classList.toggle('hidden'); const existing = localStorage.getItem('nook_firebase_config'); if(existing) document.getElementById('config-input').value = existing; }
+
+        function saveConfig() {
+            let raw = document.getElementById('config-input').value.trim();
+            try {
+                if(raw.includes('=')) raw = raw.split('=')[1].trim();
+                if(raw.endsWith(';')) raw = raw.slice(0, -1);
+                let jsonString = raw.replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":').replace(/,(\s*})/g, '$1');
+                const config = JSON.parse(jsonString); 
+                localStorage.setItem('nook_firebase_config', JSON.stringify(config));
+                alert('✅ 設定已儲存！請輸入代碼開始使用。'); document.getElementById('config-panel').classList.add('hidden'); setTimeout(() => location.reload(), 500);
+            } catch(e) { console.error(e); alert('❌ 格式無法辨識！\n請確認您複製的是 Firebase 給的那段完整程式碼。\n\n錯誤詳情: ' + e.message); }
+        }
+
+        function logout() { if(confirm('要登出並更換代碼嗎？')) { localStorage.removeItem('nook_travel_id'); window.location.href = window.location.pathname; } }
+        function addExpense() { const cat = document.getElementById('acc-cat').value; const item = document.getElementById('acc-item').value; const amt = parseFloat(document.getElementById('acc-amt').value); const curr = document.getElementById('acc-curr').value; if(!item || !amt) return; db.collection('artifacts').doc(appId).collection('public').doc('data').collection('expenses').add({ time: Date.now(), cat, item, amt, curr }); document.getElementById('acc-item').value = ''; document.getElementById('acc-amt').value = ''; }
+        function delExpense(id) { if(confirm('確定刪除這筆紀錄？')) { db.collection('artifacts').doc(appId).collection('public').doc('data').collection('expenses').doc(id).delete(); } }
+        function renderAccounting() { const list = document.getElementById('expense-list'); list.innerHTML = ''; if(expenses.length === 0) { list.innerHTML = `<div class="text-center text-gray-400 py-10">這裡還空空的，開始記帳吧！</div>`; return; } expenses.forEach(ex => { const twd = ex.curr === 'JPY' ? Math.round(ex.amt * RATE) : ex.amt; const idParam = `'${ex.id}'`; list.innerHTML += `<div class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition"><div class="flex items-center"><span class="w-10 h-10 rounded-full bg-[#F1F8E9] text-xl flex items-center justify-center mr-3 select-none">${ex.cat.substring(0,2)}</span><div><div class="font-bold text-[#594A3D]">${ex.item}</div><div class="text-xs text-gray-400">${ex.amt} ${ex.curr}</div></div></div><div class="flex items-center"><span class="font-bold text-[#E65100] mr-4">$${twd}</span><button onclick="delExpense(${idParam})" class="text-gray-300 hover:text-red-500 font-bold px-2">×</button></div></div>`; }); }
+        function addListItem() { const val = document.getElementById('list-input').value; if(!val) return; db.collection('artifacts').doc(appId).collection('public').doc('data').collection('lists').add({ time: Date.now(), text: val, type: listMode, checked: false }); document.getElementById('list-input').value = ''; }
+        function delListItem(id) { db.collection('artifacts').doc(appId).collection('public').doc('data').collection('lists').doc(id).delete(); }
+        function renderLists() { const container = document.getElementById('list-container'); const btnPack = document.getElementById('btn-pack'); const btnShop = document.getElementById('btn-shop'); if(listMode === 'pack') { btnPack.className = "flex-1 py-2 rounded-lg font-bold transition bg-[#FFF3E0] text-[#E65100]"; btnShop.className = "flex-1 py-2 rounded-lg font-bold transition text-gray-500 hover:bg-gray-50"; } else { btnShop.className = "flex-1 py-2 rounded-lg font-bold transition bg-[#E0F2F1] text-[#00695C]"; btnPack.className = "flex-1 py-2 rounded-lg font-bold transition text-gray-500 hover:bg-gray-50"; } container.innerHTML = ''; const currentList = listMode === 'pack' ? packList : shopList; if(currentList.length === 0) { container.innerHTML = `<div class="col-span-1 md:col-span-2 text-center text-gray-400 py-6">清單是空的</div>`; return; } currentList.forEach(item => { const idParam = `'${item.id}'`; container.innerHTML += `<div class="flex items-center justify-between bg-white p-4 rounded-xl border border-gray-100 hover:shadow-md transition"><span class="font-bold text-gray-700 ml-2">${item.text}</span><button onclick="delListItem(${idParam})" class="text-gray-300 hover:text-red-500 font-bold px-2">×</button></div>`; }); }
+        function updateDashboard() { let varTotal = 0; expenses.forEach(e => { varTotal += (e.curr === 'JPY' ? Math.round(e.amt * RATE) : parseFloat(e.amt)); }); document.getElementById('variable-spent').innerText = new Intl.NumberFormat().format(varTotal); document.getElementById('total-spent').innerText = new Intl.NumberFormat().format(FIXED_COST + varTotal); const total = FIXED_COST + varTotal; if(total > 0) { const varPercent = Math.min((varTotal / total) * 100, 100); document.getElementById('variable-bar').style.width = varPercent + '%'; } }
+        function switchView(viewId) { document.querySelectorAll('main > section').forEach(el => { el.classList.add('hidden'); el.classList.remove('fade-in'); }); const target = document.getElementById(`view-${viewId}`); if(target) { target.classList.remove('hidden'); void target.offsetWidth; target.classList.add('fade-in'); window.scrollTo(0,0); } document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active')); const navBtn = document.getElementById(`nav-${viewId}`); if(navBtn) navBtn.classList.add('active'); if(viewId === 'dashboard') updateDashboard(); }
+        function closeMenu() { document.getElementById('mobile-menu').classList.add('hidden'); }
+    </script>
+</body>
+</html>irebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
