@@ -66,9 +66,9 @@
             
             <!-- Config 設定區 (預設隱藏) -->
             <div id="config-panel" class="hidden mt-4 text-left bg-gray-50 p-3 rounded-lg border border-gray-200">
-                <p class="text-xs text-gray-500 mb-2 font-bold">請貼上 Firebase Config (JSON格式):</p>
-                <textarea id="config-input" class="w-full h-24 text-[10px] bg-white p-2 rounded border border-gray-300 font-mono mb-2" placeholder='const firebaseConfig = { ... }'></textarea>
-                <button onclick="saveConfig()" class="w-full bg-[#F7E464] text-[#7C5E45] font-bold py-2 rounded-lg text-sm hover:bg-[#FFD54F]">儲存設定</button>
+                <p class="text-xs text-gray-500 mb-2 font-bold">請貼上 Firebase Config (整段複製):</p>
+                <textarea id="config-input" class="w-full h-32 text-[11px] bg-white p-2 rounded border border-gray-300 font-mono mb-2 shadow-inner" placeholder='const firebaseConfig = { ... }'></textarea>
+                <button onclick="saveConfig()" class="w-full bg-[#F7E464] text-[#7C5E45] font-bold py-2 rounded-lg text-sm hover:bg-[#FFD54F]">儲存並修復格式</button>
             </div>
         </div>
     </div>
@@ -366,17 +366,27 @@
 
         // 初始化 Firebase
         async function initFirebase(config) {
-            if (!firebase.apps.length) {
-                firebase.initializeApp(config);
-            }
-            auth = firebase.auth();
-            db = firebase.firestore();
+            try {
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(config);
+                }
+                auth = firebase.auth();
+                db = firebase.firestore();
 
-            // 匿名登入
-            await auth.signInAnonymously();
-            
-            // 開始監聽 (路徑包含 appId)
-            setupListeners();
+                // 匿名登入
+                await auth.signInAnonymously();
+                
+                // 開始監聽 (路徑包含 appId)
+                setupListeners();
+            } catch (e) {
+                console.error("Firebase Init Error:", e);
+                // 如果是 Config 錯誤，可以提示使用者重設，這裡先不做強制清除避免誤判
+                if(e.code === "auth/invalid-api-key") {
+                    alert("⚠️ 雲端鑰匙 (API Key) 無效！\n請重新設定雲端資料庫。");
+                    localStorage.removeItem('nook_firebase_config');
+                    location.reload();
+                }
+            }
         }
 
         function setupListeners() {
@@ -441,19 +451,37 @@
             if(existing) document.getElementById('config-input').value = existing;
         }
 
+        // --- 新版: 容錯與自動修復格式的儲存函式 ---
         function saveConfig() {
-            const raw = document.getElementById('config-input').value.trim();
+            let raw = document.getElementById('config-input').value.trim();
             try {
-                let cleanRaw = raw;
-                if(raw.includes('=')) cleanRaw = raw.split('=')[1].trim();
-                if(cleanRaw.endsWith(';')) cleanRaw = cleanRaw.slice(0, -1);
+                // 1. 去除 const firebaseConfig = 部分
+                if(raw.includes('=')) raw = raw.split('=')[1].trim();
+                // 2. 去除結尾的分號
+                if(raw.endsWith(';')) raw = raw.slice(0, -1);
                 
-                JSON.parse(cleanRaw); // 驗證 JSON
-                localStorage.setItem('nook_firebase_config', cleanRaw);
+                // 3. 嘗試修復格式：將沒有引號的 key 加上引號 (例如 apiKey: -> "apiKey":)
+                // 這是因為 Firebase 控制台給的是 JS 物件，不是標準 JSON
+                let jsonString = raw.replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":');
+                
+                // 4. 去除多餘的逗號 (例如 , } -> })
+                jsonString = jsonString.replace(/,(\s*})/g, '$1');
+
+                // 5. 嘗試解析
+                const config = JSON.parse(jsonString); 
+                
+                // 儲存原本的字串或標準化後的 JSON 都可以，這裡存標準 JSON
+                localStorage.setItem('nook_firebase_config', JSON.stringify(config));
+                
                 alert('✅ 設定已儲存！請輸入代碼開始使用。');
                 document.getElementById('config-panel').classList.add('hidden');
+                
+                // 自動重整頁面以套用
+                setTimeout(() => location.reload(), 500);
+                
             } catch(e) {
-                alert('❌ 格式錯誤！請確保複製的是完整的 { ... } 內容。');
+                console.error(e);
+                alert('❌ 格式無法辨識！\n請確認您複製的是 Firebase 給的那段完整程式碼 (包含大括號)。\n\n錯誤詳情: ' + e.message);
             }
         }
 
