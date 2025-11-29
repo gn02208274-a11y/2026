@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>2026 山梨甲斐旅 (分類修正版)</title>
+    <title>2026 山梨甲斐旅 (最終完美版)</title>
     
     <script>
         window.onerror = function(msg, url, line) {
@@ -81,6 +81,18 @@
         
         .timeline-line { position: absolute; left: 1.15rem; top: 1rem; bottom: -1rem; border-left: 3px dotted #DCD0C0; z-index: 0; }
         .timeline-dot { box-shadow: 0 0 0 4px #FDFBF0; }
+
+        /* 詳細行程專用樣式 */
+        .transport-card { 
+            background-color: #E0F7FA; border: 2px dashed #4DD0E1; 
+            border-radius: 1rem; padding: 0.75rem; margin-top: 0.75rem; 
+            font-size: 0.85rem; color: #006064; position: relative; 
+        }
+        .transport-card::before { 
+            content: "✈️ 交通移動"; position: absolute; top: -10px; right: 10px; 
+            background: #4DD0E1; color: white; font-size: 0.6rem; 
+            padding: 2px 6px; border-radius: 4px; font-weight: bold; 
+        }
 
         .modal { position: fixed; inset: 0; background: rgba(121, 102, 82, 0.4); z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(4px); }
         .modal-content { 
@@ -188,14 +200,14 @@
             </div>
         </section>
 
-        <!-- Itinerary -->
+        <!-- Itinerary (詳細內容回歸版) -->
         <section id="view-itinerary" class="hidden fade-in">
             <div class="flex overflow-x-auto space-x-3 pb-2 mb-4 no-scrollbar px-1">
-                <button onclick="renderDay(1)" class="px-5 py-2.5 bg-white rounded-2xl text-sm font-bold text-[#A69585] shadow-sm border border-transparent whitespace-nowrap transition-all day-tab" id="tab-day1">Day 1</button>
-                <button onclick="renderDay(2)" class="px-5 py-2.5 bg-white rounded-2xl text-sm font-bold text-[#A69585] shadow-sm border border-transparent whitespace-nowrap transition-all day-tab" id="tab-day2">Day 2</button>
-                <button onclick="renderDay(3)" class="px-5 py-2.5 bg-white rounded-2xl text-sm font-bold text-[#A69585] shadow-sm border border-transparent whitespace-nowrap transition-all day-tab" id="tab-day3">Day 3</button>
-                <button onclick="renderDay(4)" class="px-5 py-2.5 bg-white rounded-2xl text-sm font-bold text-[#A69585] shadow-sm border border-transparent whitespace-nowrap transition-all day-tab" id="tab-day4">Day 4</button>
-                <button onclick="renderDay(5)" class="px-5 py-2.5 bg-white rounded-2xl text-sm font-bold text-[#A69585] shadow-sm border border-transparent whitespace-nowrap transition-all day-tab" id="tab-day5">Day 5</button>
+                <button onclick="renderDay(1)" class="px-5 py-2.5 bg-white rounded-2xl text-sm font-bold text-[#A69585] shadow-sm border border-transparent whitespace-nowrap transition-all day-tab" id="tab-day1">3/13(五)</button>
+                <button onclick="renderDay(2)" class="px-5 py-2.5 bg-white rounded-2xl text-sm font-bold text-[#A69585] shadow-sm border border-transparent whitespace-nowrap transition-all day-tab" id="tab-day2">3/14(六)</button>
+                <button onclick="renderDay(3)" class="px-5 py-2.5 bg-white rounded-2xl text-sm font-bold text-[#A69585] shadow-sm border border-transparent whitespace-nowrap transition-all day-tab" id="tab-day3">3/15(日)</button>
+                <button onclick="renderDay(4)" class="px-5 py-2.5 bg-white rounded-2xl text-sm font-bold text-[#A69585] shadow-sm border border-transparent whitespace-nowrap transition-all day-tab" id="tab-day4">3/16(一)</button>
+                <button onclick="renderDay(5)" class="px-5 py-2.5 bg-white rounded-2xl text-sm font-bold text-[#A69585] shadow-sm border border-transparent whitespace-nowrap transition-all day-tab" id="tab-day5">3/17(二)</button>
             </div>
             <div id="day-content" class="space-y-6 px-1"></div>
         </section>
@@ -205,11 +217,7 @@
             <div class="nook-card p-5 bg-white sticky top-0 z-10 shadow-lg border-2 border-[#8DD27E]">
                 <div class="grid grid-cols-4 gap-3 mb-3">
                     <select id="acc-cat" class="col-span-1 bg-[#E9F5E6] rounded-xl text-sm font-bold text-[#6BAF5C] text-center outline-none h-12">
-                        <option value="餐飲">餐飲</option>
-                        <option value="交通">交通</option>
-                        <option value="門票">門票</option>
-                        <option value="購物">購物</option>
-                        <option value="其他">其他</option>
+                        <option value="餐飲">餐飲</option><option value="交通">交通</option><option value="門票">門票</option><option value="購物">購物</option><option value="其他">其他</option>
                     </select>
                     <input type="text" id="acc-item" placeholder="項目名稱" class="col-span-3 bg-[#FAFAFA] border-2 border-[#EEE8D6] rounded-xl px-3 text-sm outline-none font-bold focus:border-[#8DD27E] h-12">
                 </div>
@@ -281,12 +289,13 @@
         let db, auth, appId;
         let expenses = [], packList = [], shopList = [], listMode = 'pack';
 
-        const itinerary = {
-            1: [{t:"10:35",i:"🛬",h:"抵達成田",d:"IT200 抵達"},{t:"11:44",i:"🚆",h:"N'EX 往新宿",d:"9/10月台搭乘"},{t:"13:30",i:"🚄",h:"轉乘 Kaiji",d:"新宿轉特急往石和溫泉"},{t:"15:00",i:"🏡",h:"Check-in",d:"搭計程車至古民家"}],
-            2: [{t:"09:00",i:"🏯",h:"惠林寺",d:"武田信玄墓所"},{t:"11:00",i:"🍓",h:"草莓吃到飽",d:"Gourmet 苺前田"},{t:"13:30",i:"🏞️",h:"昇仙峽",d:"絕美溪谷健行"},{t:"18:30",i:"🐷",h:"甲府晚餐",d:"富士櫻豬炸豬排"}],
-            3: [{t:"10:08",i:"🚌",h:"移動日(必搭)",d:"石和溫泉發車往河口湖"},{t:"12:00",i:"🏘️",h:"西湖根場",d:"合掌造聚落"},{t:"15:00",i:"🌸",h:"大石公園",d:"紅線巴士終點"},{t:"16:30",i:"🏨",h:"入住 HOTORI",d:"面湖房型"}],
-            4: [{t:"09:00",i:"⛩️",h:"天空鳥居",d:"搭計程車上山"},{t:"11:30",i:"🍜",h:"Hoto Fudo",d:"餺飥麵午餐"},{t:"14:00",i:"🚠",h:"天上山纜車",d:"俯瞰河口湖"},{t:"16:00",i:"🎨",h:"久保田一竹",d:"和服美術館"}],
-            5: [{t:"11:00",i:"👋",h:"退房",d:"前往河口湖站"},{t:"13:00",i:"🚆",h:"富士回遊",d:"直達新宿"},{t:"17:00",i:"🛫",h:"前往機場",d:"N'EX 往成田"},{t:"20:25",i:"✈️",h:"返台",d:"IT203"}]
+        // --- 詳細行程資料 (已恢復) ---
+        const itineraryData = {
+            1: { title: "3/13 (五) Day 1: 抵達與溫泉", timeline: [ { time: "10:35", icon: "🛬", title: "抵達成田 (NRT)", desc: "IT200 抵達。領行李、過海關。", cost: "無", mapQuery: "Narita International Airport", transport: { mode: "N'EX", route: "成田 -> 新宿", duration: "80分", note: "建議 11:44 或 12:20" } }, { time: "11:44", icon: "🚆", title: "N'EX 前往新宿", desc: "搭乘 N'EX 成田特快。", cost: "¥3,270", mapQuery: "Shinjuku Station", transport: { mode: "特急", route: "新宿轉乘 Kaiji", duration: "轉乘時間約 20分", note: "9/10 月台" } }, { time: "13:30", icon: "🚄", title: "轉乘 Kaiji 特急", desc: "新宿轉乘 JR Kaiji 號往石和溫泉。", cost: "¥3,890", mapQuery: "Isawa-Onsen Station", transport: { mode: "Kaiji", route: "新宿 -> 石和溫泉", duration: "90分", note: "直達" } }, { time: "15:00", icon: "🚕", title: "前往民宿", desc: "石和溫泉站搭計程車至古民家。", cost: "約 ¥1,500", mapQuery: "フクロウの御宿 春日居館", transport: { mode: "Taxi", route: "車站 -> 民宿", duration: "10分", note: "南口排班計程車" } }, { time: "18:00", icon: "🍱", title: "晚餐", desc: "享用在車站買的便當或附近的餐廳。", cost: "約 ¥1,500/人" } ] },
+            2: { title: "3/14 (六) Day 2: 草莓與溪谷", timeline: [ { time: "09:00", icon: "🏯", title: "惠林寺參拜", desc: "武田信玄長眠之地，庭園極美。", hours: "8:30 - 16:30", cost: "門票 ¥300", mapQuery: "Erinji Temple", transport: { mode: "Taxi", route: "民宿 -> 惠林寺", duration: "20分", note: "請民宿幫忙叫車" } }, { time: "11:00", icon: "🍓", title: "Gourmet 苺前田", desc: "高級草莓吃到飽 (30分)。", hours: "10:00 - 16:00 (需預約)", cost: "¥2,500/人", mapQuery: "Gourmet Strawberry Museum Maeda", transport: { mode: "Taxi", route: "惠林寺 -> 草莓園", duration: "30分", note: "車資約 ¥4000 (較貴但省時)" } }, { time: "13:30", icon: "🏞️", title: "昇仙峽", desc: "搭巴士前往，欣賞絕美溪谷。", hours: "全天開放", cost: "來回 ¥1,200", mapQuery: "Shosenkyo", transport: { mode: "巴士", route: "甲府站(南口4號) -> 昇仙峽口", duration: "30分", note: "山梨交通巴士" } }, { time: "18:30", icon: "🐷", title: "甲府晚餐", desc: "甲州富士櫻豬炸豬排。", hours: "17:00 - 21:00", cost: "約 ¥2,000/人", mapQuery: "Kofu Station", transport: { mode: "JR", route: "甲府 -> 石和溫泉", duration: "10分", note: "回程" } } ] },
+            3: { title: "3/15 (日) Day 3: 移動至河口湖", timeline: [ { time: "10:08", icon: "🚌", title: "直達巴士", desc: "石和溫泉發車，前往河口湖站。", cost: "¥1,400/人", mapQuery: "Isawa-Onsen Station", transport: { mode: "富士急巴士", route: "石和溫泉 -> 河口湖站", duration: "50分", note: "必搭 10:08 班次!" } }, { time: "12:00", icon: "🏘️", title: "西湖療癒之里根場", desc: "參觀茅草屋聚落、吃午餐。", hours: "9:00 - 17:00", cost: "門票 ¥500", mapQuery: "Saiko Iyashi-no-Sato Nenba", transport: { mode: "綠線巴士", route: "河口湖站 -> 西湖根場", duration: "40分", note: "1號乘車處" } }, { time: "15:00", icon: "🌸", title: "大石公園", desc: "紅線巴士終點，免費入園。", hours: "全天開放 (商店~17:00)", cost: "免費", mapQuery: "Oishi Park", transport: { mode: "轉乘", route: "綠線回車站 -> 紅線去大石", duration: "60分", note: "需回河口湖站轉車" } }, { time: "16:30", icon: "🏨", title: "Check-in", desc: "入住 HOTORI Hotel。", cost: "已付", mapQuery: "HOTORI no HOTEL BAN", transport: { mode: "紅線巴士", route: "大石公園 -> 音樂盒之森", duration: "10分", note: "飯店在站牌旁" } } ] },
+            4: { title: "3/16 (一) Day 4: 天空鳥居與纜車", timeline: [ { time: "09:00", icon: "⛩️", title: "河口淺間神社 (天空鳥居)", desc: "早起前往遙拜所。拍攝巨大鳥居與富士山的夢幻合影。", hours: "9:00 - 16:00", cost: "協力金 ¥100", mapQuery: "Tenku no Torii", transport: { mode: "Taxi", route: "飯店 -> 遙拜所", duration: "約15分", note: "建議直接叫車上山" } }, { time: "11:30", icon: "🍜", title: "Hoto Fudo (北本店)", desc: "下山後，前往這間著名的餺飥麵餐廳享用午餐。", hours: "11:00 - 20:00", cost: "¥1,210", mapQuery: "Hoto Fudo Kawaguchiko North Main Shop", transport: { mode: "Taxi/Walk", route: "遙拜所 -> 餐廳", duration: "10-15分", note: "計程車下山最方便" } }, { time: "14:00", icon: "🚠", title: "河口湖纜車", desc: "搭乘纜車至天上山公園，俯瞰河口湖全景。可以吃烤糰子。", hours: "9:30 - 16:00 (平日)", cost: "來回 ¥900", mapQuery: "Mt. Fuji Panoramic Ropeway", transport: { mode: "紅線巴士", route: "音樂盒之森 -> 遊覽船/纜車口", duration: "約15分", note: "飯店旁搭車" } }, { time: "16:00", icon: "🎨", title: "久保田一竹美術館", desc: "參觀和服藝術 (12-3月週二休館，今日週一有開!)", hours: "10:00 - 16:30", cost: "¥1,300", mapQuery: "Itchiku Kubota Art Museum", transport: { mode: "紅線巴士", route: "纜車 -> 美術館", duration: "15分", note: "注意最後入館時間" } } ] },
+            5: { title: "3/17 (二) Day 5: 返程", timeline: [ { time: "11:00", icon: "👋", title: "退房 & 巴士", desc: "搭紅線巴士回河口湖站。", cost: "約 ¥400", mapQuery: "Kawaguchiko Station", transport: { mode: "紅線巴士", route: "飯店 -> 河口湖站", duration: "20分", note: "預留時間逛車站" } }, { time: "13:00", icon: "🚆", title: "富士回遊", desc: "特急直達新宿。週二無加班車。", cost: "¥4,130", mapQuery: "Shinjuku Station", transport: { mode: "富士回遊", route: "河口湖 -> 新宿", duration: "2hr", note: "預約 12:04 (回遊16) 或 14:04 (回遊20)" } }, { time: "17:00", icon: "🛫", title: "N'EX 往機場", desc: "新宿轉乘 N'EX。", cost: "¥3,270", mapQuery: "Narita International Airport", transport: { mode: "N'EX", route: "新宿 -> 成田", duration: "80分", note: "18:25 前抵達櫃檯" } }, { time: "20:25", icon: "✈️", title: "起飛返台", desc: "IT203 飛往 TPE。", cost: "已付", mapQuery: "Narita International Airport", transport: { mode: "飛行機", route: "NRT -> TPE", duration: "4hr", note: "再見了日本!" } } ] }
         };
 
         const categoryIcons = {
@@ -316,6 +325,7 @@
                 document.getElementById('login-modal').classList.add('hidden');
                 document.getElementById('main-container').classList.remove('hidden');
                 switchView('dashboard');
+                renderDay(1); // 預載 Day 1
             } else {
                 document.getElementById('login-modal').classList.remove('hidden');
             }
@@ -413,14 +423,48 @@
             });
         }
 
-        function renderDay(day) {
+        // --- Render Day (更新為詳細版邏輯) ---
+        function renderDay(dayNum) {
             document.querySelectorAll('.day-tab').forEach(el => el.className = "px-5 py-2.5 bg-white rounded-2xl text-sm font-bold text-[#A69585] shadow-sm border border-transparent whitespace-nowrap transition-all day-tab");
-            document.getElementById(`tab-day${day}`).className = "px-5 py-2.5 bg-[#8DD27E] rounded-2xl text-sm font-bold text-white shadow-md border border-[#8DD27E] whitespace-nowrap transition-all transform scale-105 day-tab";
+            document.getElementById(`tab-day${dayNum}`).className = "px-5 py-2.5 bg-[#8DD27E] rounded-2xl text-sm font-bold text-white shadow-md border border-[#8DD27E] whitespace-nowrap transition-all transform scale-105 day-tab";
             
-            const container = document.getElementById('day-content'); container.innerHTML = '';
-            itinerary[day].forEach(item => {
-                container.innerHTML += `<div class="flex relative pl-3 pb-2"><div class="timeline-line"></div><div class="z-10 w-9 h-9 rounded-full bg-[#FFFDF6] border-4 border-[#8DD27E] flex items-center justify-center text-sm mr-4 shrink-0 timeline-dot">${item.i}</div><div class="bg-white p-4 rounded-[1.2rem] border border-[#F0EAE0] flex-grow shadow-sm mb-2"><div class="flex justify-between items-baseline mb-1"><span class="font-black text-[#6B5643] text-lg">${item.h}</span><span class="text-xs font-bold text-[#6BAF5C] bg-[#E9F5E6] px-2 py-1 rounded-lg">${item.t}</span></div><p class="text-xs text-[#A69585] font-bold leading-relaxed">${item.d}</p></div></div>`;
+            const data = itineraryData[dayNum];
+            const container = document.getElementById('day-content');
+            
+            // 加入標題
+            let html = `<div class="mb-2 px-2"><h3 class="text-xl font-black text-[#6B5643]">${data.title}</h3></div>`;
+            
+            data.timeline.forEach(item => {
+                // 導航按鈕
+                const mapLink = item.mapQuery ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.mapQuery)}" target="_blank" class="inline-flex items-center mt-3 px-3 py-1.5 bg-[#70D3E8] text-white text-xs font-bold rounded-lg shadow-sm hover:bg-[#4DD0E1] transition">🗺️ 導航</a>` : '';
+                
+                // 交通卡片
+                let transportCard = '';
+                if(item.transport) {
+                    transportCard = `<div class="transport-card"><div class="flex justify-between items-start mb-1"><span class="font-black text-[#006064] text-sm">${item.transport.mode}</span><span class="text-xs font-bold text-[#00838F] bg-white px-2 rounded-full border border-[#00838F]">${item.transport.duration}</span></div><div class="text-sm font-bold text-[#7C5E45] mb-1">${item.transport.route}</div><div class="text-xs text-[#0097A7]">💡 ${item.transport.note}</div></div>`;
+                }
+
+                // 費用與時間 Badge
+                let costBadge = item.cost ? `<span class="text-[10px] font-bold text-[#FFB366] bg-[#FFF8E1] px-2 py-1 rounded border border-[#FFB366] mr-1">💰 ${item.cost}</span>` : '';
+                let hoursBadge = item.hours ? `<span class="text-[10px] font-bold text-[#8DD27E] bg-[#E9F5E6] px-2 py-1 rounded border border-[#8DD27E]">🕒 ${item.hours}</span>` : '';
+
+                html += `
+                    <div class="flex relative pl-3 pb-2 group">
+                        <div class="timeline-line"></div>
+                        <div class="z-10 w-9 h-9 rounded-full bg-[#FFFDF6] border-4 border-[#8DD27E] flex items-center justify-center text-sm mr-4 shrink-0 timeline-dot shadow-sm">${item.icon}</div>
+                        <div class="bg-white p-4 rounded-[1.2rem] border border-[#F0EAE0] flex-grow shadow-sm mb-2 hover:shadow-md transition">
+                            <div class="flex justify-between items-baseline mb-1">
+                                <span class="font-black text-[#6B5643] text-lg">${item.title}</span>
+                                <span class="text-xs font-bold text-[#6BAF5C] bg-[#E9F5E6] px-2 py-1 rounded-lg">${item.time}</span>
+                            </div>
+                            <p class="text-xs text-[#A69585] font-bold leading-relaxed mb-2">${item.desc}</p>
+                            <div class="mb-2">${costBadge}${hoursBadge}</div>
+                            ${transportCard}
+                            ${mapLink}
+                        </div>
+                    </div>`;
             });
+            container.innerHTML = html;
         }
 
         function updateDashboard() {
